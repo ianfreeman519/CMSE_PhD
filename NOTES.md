@@ -1,5 +1,31 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 03/21/24
+The issue is not, in fact, fixed. Turns out there are 3 dimensions in real life, and all three need fields defined. I added those definitions, but the temperature is still doing really weird things. This is an image from the standard inputs, with 128x128 cells, 16x16 blocks, B0=5e5, v0=2e7 (fixed_magpinch) (left), and the same setup with B=0 (right). These plots are both at the end of the simulation time.
+- <img src="athena_files/unfixed_pgen_1.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/unfixed_pgen_no_B_20.png" alth="unfixed_magpinch" width="400"/>
+
+The changes I made to the problem generator (I added two more nested for loops to account for the y- and z- direction B-field in each meshblock...):
+
+``` c++
+for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {
+            // Same as x-direction
+        }
+    }
+}
+for (int k=ks; k<=ke+1; k++) {
+    for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+            // Same as x-direction
+        }
+    }
+}
+```
+
+For some reason, it looks like the bad values of pressure and temperature are coming in from the boundaries that have velocity pointing away from them. I don't know what to make of that. There is also something goofy going on with the velocity magnitude at the +/-y boundaries, which doesn't make sense because the y-velocity at the boundaries should be 0.
+
+
 ## 03/20/24 - Fixed checkerboard issue
 Brian noticed a few days ago that it very well might be a face-centered field initialization problem in my problem generator. The face centered fields for some reason need to be set from i=1 to i=ie+1 and j=1 to j=je+1. I originally missed this when I made this problem generator.
 + This fixed the issue:
