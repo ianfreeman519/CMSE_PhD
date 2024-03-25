@@ -1,5 +1,11 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 03/25/24
+TODO from meeting today:
+ - Make a custom flow chart to track what Athena is actually doing
+ - Set up debugger to track boundary conditions, and values. Make sure it is actually just copying rows and columns of data across to the boundary and that the zero-gradient is doing what I need it to be doing
+ - Make plots of LOTS of fields and values to see if we can spot where the bad values are arriving.
+
 ## 03/21/24
 The issue is not, in fact, fixed. Turns out there are 3 dimensions in real life, and all three need fields defined. I added those definitions, but the temperature is still doing really weird things. This is an image from the standard inputs, with 128x128 cells, 16x16 blocks, B0=5e5, v0=2e7 (fixed_magpinch) (left), and the same setup with B=0 (right). These plots are both at the end of the simulation time.
 - <img src="athena_files/unfixed_pgen_1.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/unfixed_pgen_no_B_20.png" alth="unfixed_magpinch" width="400"/>
