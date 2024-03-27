@@ -2,6 +2,45 @@
 
 ## 03/27/24
  - Added a few alias commansd in ~/.bashrc to make working in this document easier.
+ - Started a flow chart for athena, and I have the following questions:
+    + There are a whole lot of MPI_Finalize() calls floating around, but not a lot of initialization calls going around. I know [MPI_Finalize does not actually destroy any information](https://stackoverflow.com/a/2290951/893863), but I don't understand why MPI is working the way it is in this code.
+
+Inside Athena++, main.cpp is the brain of the operation. There are 10 main steps:
+ 1. (Line 71) Initializing environment
+ 2. (Line 117) Grabbing command line arguments
+ 3. (Line 216) Parsing input file and command line arguments.
+    - When MPI is initialized, the input file is read by every process
+    - This part of the code relies wholly on src/parameter_input.cpp (and .hpp)
+        + It grabs all the important data about meshblocks and the specific problem generator from the athinput.* file.
+ 4. (Line 264) Constructing and initializing mesh
+    - This part of the code works out of src/mesh/mesh.cpp (and .hpp)
+        +  at first glance, this is only responsible for AMR and initialization, NOT dealing with boundary conditions in the middle of runs. TODO investigate more.
+ 5. (Line 325) Constructing a "TaskList" for the integrator
+    - This part goes WAY over my head, because its full of `if (integrator == "thing") {` commands, which I understand at face value, but the details of this step are lost on me.
+    - I believe this step is initializing the integrator so it can be called faster (?) in the future.
+ 6. (Line 364) Initial conditions from problem generator.
+    - This is where the "Initialize()" function is called, but I cannot find *where* this is defined. TODO find where Initialize function is defined.
+ 7. (Line 390) Create output object, and output ICs
+    - This part is not the problem part, and there is nothing immediately confusing about it, so I am moving on.
+    - Run from src/outputs/outputs.cpp (and .hpp)
+    - `pouts` object is what acutally makes the outputs.
+    - `pouts->MakeOutputs(mesh,input)` method is what actually makes the files
+ 8. (Line 420) Main integration loop
+    - Conditions for integration loop: `(pmesh->time < pmesh->tlim) && (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)`
+    - On rank 0, `pmesh->OutputCycleDiagnostics()`
+    - By default, we don't have supertimestepping enabled, so we skip lines 437-357
+    - By default, we don't have driven turbulence enabled, so we skip line 459
+    - Inside the main loop is the following for loop:
+    ```c++
+        for (int stage=1; stage<=ptlist->nstages; ++stage) {
+            ptlist->DoTaskListOneStage(pmesh, stage);
+            //Then a bunch of self_gravity checks
+        }
+    ```
+    - The `DoTaskListOneStage(pmesh, stage)` calls `DoAllAvailableTasks(mesh, stage)`, which at some point digs into meshblock.cpp to run the time measurement schemes.
+    - Next it calls `pmesh->UserWorkInLoop()` which I *cannot for the life of me* find where this is defined. It is referenced in mesh/mesh.hpp, but not defined in mesh.cpp, meshblock.cpp, mesh_refinement.cpp, or task_list.cpp. Shift+F12 (VSCode's search feature) just points to mesh.hpp, which doesn't tell me where it runs...
+    - TODO finish searching for this.
+    
 
 ## 03/25/24
 TODO from meeting today:
@@ -15,7 +54,7 @@ The issue is not, in fact, fixed. Turns out there are 3 dimensions in real life,
 
 The changes I made to the problem generator (I added two more nested for loops to account for the y- and z- direction B-field in each meshblock...):
 
-``` c++
+```c++
 for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
@@ -44,7 +83,7 @@ Brian noticed a few days ago that it very well might be a face-centered field in
 
 I am trying to hunt down what is causing checkerboard instabilities in simple Athena++ geometries. Specifically in the "magpinch.cpp" problem generator. Currently, it seems to be a problem with the y-velocity, and likely a halo exchange (each processor grabbing the required ghost zones to do the solve) in the positive y edge of each block. 
 
-TODO:
+Old to do list:
 + (done) Make a Research Notebook
 + Change the meshblocks of the Athena++ input file to be larger (than 4x4), because the ghost zones might be reaching too far into the neighboring blocks which might be causing the instabilities
     - I ran a 32x32 with 16x16 blocks and the issue persists (big_mesh_magpinch/):
