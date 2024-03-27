@@ -1,5 +1,8 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 03/27/24
+ - Added a few alias commansd in ~/.bashrc to make working in this document easier.
+
 ## 03/25/24
 TODO from meeting today:
  - Make a custom flow chart to track what Athena is actually doing
