@@ -1,6 +1,13 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
-## 03/27/24
+## 04/01/24 - Investigating Boundary Value Problems
+I FOUND IT. There was a folder called `src/bvals` which has all the code that runs the boundary value problems... How elegant. The specific outflow file is in `src/bvals/cc/outflow_cc.cpp` which is only 137 lines long...
+
+
+
+
+## 03/27/24 & 04/01/24 - Notes on Athena++ flow
+ - [Athena++ Method Paper](https://ui.adsabs.harvard.edu/abs/2020ApJS..249....4S/abstract)
  - Added a few alias commansd in ~/.bashrc to make working in this document easier.
  - Started a flow chart for athena, and I have the following questions:
     + There are a whole lot of MPI_Finalize() calls floating around, but not a lot of initialization calls going around. I know [MPI_Finalize does not actually destroy any information](https://stackoverflow.com/a/2290951/893863), but I don't understand why MPI is working the way it is in this code.
@@ -14,7 +21,7 @@ Inside Athena++, main.cpp is the brain of the operation. There are 10 main steps
         + It grabs all the important data about meshblocks and the specific problem generator from the athinput.* file.
  4. (Line 264) Constructing and initializing mesh
     - This part of the code works out of src/mesh/mesh.cpp (and .hpp)
-        +  at first glance, this is only responsible for AMR and initialization, NOT dealing with boundary conditions in the middle of runs. TODO investigate more.
+        +  at first glance, this is only responsible for AMR and initialization, NOT dealing with boundary conditions in the middle of runs.
  5. (Line 325) Constructing a "TaskList" for the integrator
     - This part goes WAY over my head, because its full of `if (integrator == "thing") {` commands, which I understand at face value, but the details of this step are lost on me.
     - I believe this step is initializing the integrator so it can be called faster (?) in the future.
@@ -38,8 +45,13 @@ Inside Athena++, main.cpp is the brain of the operation. There are 10 main steps
         }
     ```
     - The `DoTaskListOneStage(pmesh, stage)` calls `DoAllAvailableTasks(mesh, stage)`, which at some point digs into meshblock.cpp to run the time measurement schemes.
-    - Next it calls `pmesh->UserWorkInLoop()` which I *cannot for the life of me* find where this is defined. It is referenced in mesh/mesh.hpp, but not defined in mesh.cpp, meshblock.cpp, mesh_refinement.cpp, or task_list.cpp. Shift+F12 (VSCode's search feature) just points to mesh.hpp, which doesn't tell me where it runs...
-    - TODO finish searching for this.
+    - Next it calls `pmesh->UserWorkInLoop()` which I **finally found** in the src/mesh/mesh.cpp (line 1679). Looks like the code that is responsible for setting the boundary buffers is the call of `pmb->pscalars->sbvar.SendBoundaryBuffers()` or the mesh function `SetBlockSizeAndBoundaries`
+    - The method paper claims that boundary conditions are applied on the coarse buffer of each meshblock on 'step 5' of the meshblock communication cycle.
+ 9. (Line 524) Output final cycle diagnostics
+    - Makes the output files for the last timestep in case it doesn't align with the stopping time
+ 10. (Line 555) Print diagnostic messages related to end of simulation
+    - Namely what the termination conditions were, how many cycles Athena++ went through, and what the time limit was.
+    - Deletes a lot of variables, and finalizes MPI
     
 
 ## 03/25/24
