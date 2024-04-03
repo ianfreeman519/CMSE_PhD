@@ -1,5 +1,8 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 04/02/24 - Debugging time
+When I run the debugger, I put breakpoints all throughout the OutflowInnerX1() method in the `src/bvals/cc/outflow_cc.cpp` file. From one step to the next, it looks like it is pulling 0s from the boundary and placing them in the simulation zone. I cannot tell why...
+
 ## 04/01/24 - Investigating Boundary Value Problems
 I FOUND IT. There was a folder called `src/bvals` which has all the code that runs the boundary value problems... How elegant. The specific outflow file is in `src/bvals/cc/outflow_cc.cpp` which is only 137 lines long...
 
