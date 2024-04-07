@@ -1,7 +1,36 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 04/07/24 - Discussion with Ben
+I talked with Ben who asked me some simple questions about pressure and temperature in the simulations, and I realized I need to figure out how the units in Athena work. He asked about Pressure, so I went to double check the pressure definition in `magpinch.cpp` and it is set to the magnetic pressure. That is why the initial pressure plots look so bad for the B=0 case. That said, I have a few things I need to try to fix the bad values coming in from the boundaries.
+ - The mach number at those bad values are also bad, which Ben thinks is an issue with the initial speed. The simulation that was plotted below on 03/21 had initial velocities of 2e7, which is *fast*, but not too fast. Therefore we should set the velocity to a mach number somewhere between 2 and 5, to force a shock at the center, but not push the simulation too much.
+ - The pressure wholly depends on magnetic field, so I need to add a base case where the mach number is 2 or 3, and add it to the pressure in the problem generator to ensure that when the magnetic field is 0, the pressure is still nonzero.
+
+As a reminder to myself ($\gamma=2.0$), sound speed is $c_{s}=\sqrt{\gamma\frac{p}{\rho}}$, mach number is $v/c_s$, and the initial velocity profile ($x>0$) is given by $u=-\frac{\rho v_{in}}{y+1/3}$ with $v_{in}$ from the athinput file. Additionally, magnetic fields are filled in with $B=\pm \frac{B_0}{\beta+1} (x)^{\beta+1}$ which peaks at $x=3$, and should yield 0 at the center. By default $\beta=2.5$ (this is defined in athinput file as well).
+
+As a litmus test, I set the magnetic field to 5e3, $v_{in}$ to 2e4, and when I check the magnetic field strenght plot in YT, it is not fully uniform in the y direction which it needs to be.
+
+I reordered the way magnetic fields are set again within the problem generator in order of execution:
+```c++
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {
+
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {
+```
+
+ Below are the outputs of this problem generator, with $B_0$ set to 5e3, $v_{in}$ to 2e4. This fixed the sloppy initial conditions. More work needs to be done on completing the problem generator to fully describe all fields inside each meshblock. On **the left is t=0, on the right is t=1**. The files which generate this are in the aptly named `new_pgen_magpinch` file in the scratch directory.
+
+<img src="athena_files/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>
+
+
 ## 04/02/24 - Debugging time
-When I run the debugger, I put breakpoints all throughout the OutflowInnerX1() method in the `src/bvals/cc/outflow_cc.cpp` file. From one step to the next, it looks like it is pulling 0s from the boundary and placing them in the simulation zone. I cannot tell why...
+When I run the debugger, I put breakpoints all throughout the OutflowInnerX1() method in the `src/bvals/cc/outflow_cc.cpp` file. From one step to the next, it looks like it is pulling 0s from the boundary and placing them in the simulation zone. It is working exactly as it should, so I think it is really a root cause in my problem generator...
 
 ## 04/01/24 - Investigating Boundary Value Problems
 I FOUND IT. There was a folder called `src/bvals` which has all the code that runs the boundary value problems... How elegant. The specific outflow file is in `src/bvals/cc/outflow_cc.cpp` which is only 137 lines long...
