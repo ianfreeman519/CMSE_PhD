@@ -1,5 +1,13 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## 04/09/24 - meeting with Brian
+Things to try:
+- make sure x&z values are set to 0 out into the ghost zones for mag fields
+- make sure all y values are set INTO the ghost zones
+- Confirm the size of b.x1f, b.x2f, b.x3f have sizes (n+1)xnx1, etc. 
+- As a sanity check: change the code in `magpinch.cpp` to set the magnetic field in EVERY cell for EVERY dimension - make the loops go from i,j,k = 0 to i,j,k = MAX (MAX might be is+ie+1)?  **DO THIS IN A NEW .CPP FILE - PROTECT YOURSELF FROM YOURSELF**
+- Ask Ben or Google how to make experimental branches of git repos
+
 ## 04/07/24 - Discussion with Ben
 I talked with Ben who asked me some simple questions about pressure and temperature in the simulations, and I realized I need to figure out how the units in Athena work. He asked about Pressure, so I went to double check the pressure definition in `magpinch.cpp` and it is set to the magnetic pressure. That is why the initial pressure plots look so bad for the B=0 case. That said, I have a few things I need to try to fix the bad values coming in from the boundaries.
  - The mach number at those bad values are also bad, which Ben thinks is an issue with the initial speed. The simulation that was plotted below on 03/21 had initial velocities of 2e7, which is *fast*, but not too fast. Therefore we should set the velocity to a mach number somewhere between 2 and 5, to force a shock at the center, but not push the simulation too much.
