@@ -1,8 +1,152 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
 ## Comprehensive list of everything attempted as of May 1 2024
-The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful. 
+The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful, and can be seen at athena_files/zpinch5_density_Bfield.mp4. To get closer to the MARZ experiment, we added a slight perturbation in the radial direction, and set the resistivity (eta_ohm) in the athinput file to be nonzero to trigger magnetic reconnection. In the complicated simulation, we got this to work, and can be seen in athena_files/zpinchCP3_density_velocity.mp4.
 
+We then wanted to isolate the magnetic reconnection bit, so we decided to 'flatten out' the radial component, and make an inflow along the x-direction, strongest at $y=0$, and put opposing B-fields in the $x>0$ and $x\leq0$ regions. The full initial conditions set up is as follows:
+
+$$\textbf{u}=(-sgn(x)\frac{\rho v_{in}}{y+1/3},0,0)$$
+
+$$\textbf{B}=(0,sgn(x) \frac{b}{\beta+1} (x)^{\beta+1},0)$$ 
+
+By default, $\beta=2.5$, $v_in=2e7$ (usually), and $b=5e5$ (usually, more on that later). This configuration should yield the y and z velocities to be 0 everywhere, and the x and z magnetic fields to be 0. Originally, I borrowed the problem generator from the magnoh problem, and removed the radial component. I didn't realize the magnetic field needed to be face-centered, so I unintentionally deleted one of the for loops that handled this case, and it entirely broke. For a few weeks we dealt with that error. Originally, the magnoh problem set the b-field with the following loops (I include pressure here as well):
+
+```c++
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          Real geom_coeff = 1.0;
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff = 1.0/pcoord->x1f(i);
+          }
+          pfield->b.x1f(k,j,i) = geom_coeff*(az(j+1,i) - az(j,i))/pcoord->dx2f(j);
+        }
+      }
+    }
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real geom_coeff = 1.0;
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            geom_coeff = -1.0; // Left hand system?
+          }
+          pfield->b.x2f(k,j,i) = geom_coeff*(az(j,i) - az(j,i+1))/pcoord->dx1f(i);
+        }
+      }
+    }
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real rad;
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            rad = pcoord->x1v(i);
+          } else {
+            rad = std::sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
+          }
+          pfield->b.x3f(k,j,i) = bz*std::pow(rad,beta);
+        }
+      }
+    }
+    if (NON_BAROTROPIC_EOS) {
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            phydro->u(IEN,k,j,i) +=
+                // second-order accurate assumption about volume-averaged field
+                0.5*0.25*(SQR(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))
+                          + SQR(pfield->b.x2f(k,j,i)  + pfield->b.x2f(k,j+1,i))
+                          + SQR(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)));
+          }
+        }
+      }
+    }
+```
+
+When I tried to implement the field configuration we wanted originally, this is what I came up with:
+
+```c++
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {    // j loop for(int j=0; j<=je+js; i++)
+          auto debug_var = js;
+          x1 = pcoord->x1v(i);
+          if (x1 >= 0.0) {
+            pfield->b.x2f(k,j,i) = (b/(beta+1))*std::pow(x1,beta+1);
+          } else {
+            pfield->b.x2f(k,j,i) = -1.0*(b/(beta+1))*std::pow(std::abs(x1),beta+1);
+          }
+          pfield->b.x1f(k,j,i) = 0.0;
+          pfield->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+    if (NON_BAROTROPIC_EOS) {
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            phydro->u(IEN,k,j,i) +=
+                // second-order accurate assumption about volume-averaged field
+                0.5*0.25*(SQR(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))
+                          + SQR(pfield->b.x2f(k,j,i)  + pfield->b.x2f(k,j+1,i))
+                          + SQR(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)));
+          }
+        }
+      }
+    }
+```
+
+This does not work, because the face-centered fields were only being set in the j-direction, and not in the i- or k-directions. To hunt down this problem, we set the magnetic fields to zero, but recall, the pressure is set to the average magnetic pressure in the center of each cell. There were a few weeks earlier this semester where we hunted down *why* the pressure (and thermal energy) was so noisy in the initial conditions, and this is why. The pressure was being set to 0 when the magnetic fields were set to 0, which was filling the pressure fields with noise on order of machine precision ($1e-18$ to $1e-16$). This was fixed late in March (details/notes/few figures below).
+
+So the new and improved problem generator magnetic field loops look like this:
+
+```c++
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {    // j loop for(int j=0; j<=je+js; i++)
+          auto debug_var = js;
+          x1 = pcoord->x1v(i);
+          if (x1 >= 0.0) {
+            pfield->b.x2f(k,j,i) = (b/(beta+1))*std::pow(x1,beta+1);
+          } else {
+            pfield->b.x2f(k,j,i) = -1.0*(b/(beta+1))*std::pow(std::abs(x1),beta+1);
+          }
+          pfield->b.x1f(k,j,i) = 0.0;
+          pfield->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {    // k loop
+          x1 = pcoord->x1v(i);
+          if (x1 >= 0.0) {
+            pfield->b.x2f(k,j,i) = (b/(beta+1))*std::pow(x1,beta+1);
+          } else {
+            pfield->b.x2f(k,j,i) = -1.0*(b/(beta+1))*std::pow(std::abs(x1),beta+1);
+          }
+          pfield->b.x1f(k,j,i) = 0.0;
+          pfield->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {    // i loop
+          x1 = pcoord->x1v(i);
+          if (x1 >= 0.0) {
+            pfield->b.x2f(k,j,i) = (b/(beta+1))*std::pow(x1,beta+1);
+          } else {
+            pfield->b.x2f(k,j,i) = -1.0*(b/(beta+1))*std::pow(std::abs(x1),beta+1);
+          }
+          pfield->b.x1f(k,j,i) = 0.0;
+          pfield->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+```
+
+But very problematically, the top edge of the simulation cells are/were not being filled in properly. Below is an image of this.
 
 ## 05/01/24
 I have attempted to fill in everything, but the velocity, pressure, and density fields break when the indices are filled in with the following loop:
