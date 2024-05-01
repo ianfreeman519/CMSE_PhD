@@ -96,9 +96,9 @@ When I tried to implement the field configuration we wanted originally, this is 
     }
 ```
 
-This does not work, because the face-centered fields were only being set in the j-direction, and not in the i- or k-directions. To hunt down this problem, we set the magnetic fields to zero, but recall, the pressure is set to the average magnetic pressure in the center of each cell. There were a few weeks earlier this semester where we hunted down *why* the pressure (and thermal energy) was so noisy in the initial conditions, and this is why. The pressure was being set to 0 when the magnetic fields were set to 0, which was filling the pressure fields with noise on order of machine precision ($1e-18$ to $1e-16$). This was fixed late in March (details/notes/few figures below).
+This does not work, because the face-centered fields were only being set in the j-direction, and not in the i- or k-directions. To hunt down this problem, we set the magnetic fields to zero, but recall, the pressure is set to the average magnetic pressure in the center of each cell. There were a few weeks earlier this semester where we hunted down *why* the pressure (and thermal energy) was so noisy in the initial conditions, and this is why. The pressure was being set to 0 when the magnetic fields were set to 0, which was filling the pressure fields with noise on order of machine precision ($1e-18$ to $1e-16$). This was fixed late in March (details/notes/few figures below). I decided instead of trying to debug the pressure fields in the case where $B=0$, to just resort to fixing the $B\neq0$ case because that is required for the interesting reconnection to occur.
 
-So the new and improved problem generator magnetic field loops look like this:
+So the new and improved problem generator magnetic field loops, which are closely mirrored from the magnoh.cpp problem generator look like this:
 
 ```c++
     for (int k=ks; k<=ke; k++) {
@@ -146,7 +146,59 @@ So the new and improved problem generator magnetic field loops look like this:
     }
 ```
 
-But very problematically, the top edge of the simulation cells are/were not being filled in properly. Below is an image of this.
+But very problematically, the top edges (or maybe bottom?) of the simulation cells are/were not being filled in properly, but they are still nonzero? We haven't quite figured out what is happening here. Below is the colorplot with the annotated magnetic fields (black arrows) and the y-direction magnetic field strength using the above magnetic field loops.
+
+<img src="athena_files/magnetic_field_y_three_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
+
+This for loop structure is actually what I/we have returned to, because the other things we have tried have not yielded good results. Regardless, Brian suggested I try filling in all the values deep into the ghost zones of everything, to give me total control over whats happening. Unfortunately, this does not work either. Here is the loop I tried to do for that:
+
+```c++
+    for (int k=0; k<=ke+ks+1; k++) {
+      for (int j=0; j<=je+js+1; j++) {
+        for (int i=0; i<=ie+is+1; i++) {    // j loop for(int j=0; j<=je+js; i++)
+          x1 = pcoord->x1v(i);
+          if (x1 >= 0.0) {
+            pfield->b.x2f(k,j,i) = (b/(beta+1))*std::pow(x1,beta+1);
+          } else {
+            pfield->b.x2f(k,j,i) = -1.0*(b/(beta+1))*std::pow(std::abs(x1),beta+1);
+          }
+          pfield->b.x1f(k,j,i) = 0.0;
+          pfield->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+
+    if (NON_BAROTROPIC_EOS) {
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            phydro->u(IEN,k,j,i) +=
+                // second-order accurate assumption about volume-averaged field
+                0.5*0.25*(SQR(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))
+                          + SQR(pfield->b.x2f(k,j,i)  + pfield->b.x2f(k,j+1,i))
+                          + SQR(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)));
+                          // Internal Energy is adjusted based on magnetic energy
+          }
+        }
+      }
+    }
+```
+
+This does not fill in the magnetic fields properly (all constant and 0), but I'm not 100% sure why yet. Every time I run a simulation with this initial condition, the code compiles and runs, but OpenMP dumps the core information out, and spits a ton of errors. I believe this is a product of reaching into the "far corner" of the array domain. I believe (I have not confirmed this yet) all entries of the pfield.b is defined except for `pfield->b.x#f(ke+ks+1, je+js+1, ie+is+1)`. This would explain some of the pointer errors I get after running the simulation:
+
+```
+*** Error in `athenaEXE': free(): invalid pointer: 0x00000000009f31f0 ***
+*** Error in `athenaEXE': free(): invalid pointer: 0x00000000016d4e90 ***
+*** Error in `athenaEXE': free(): invalid pointer: 0x000000000296c030 ***
+```
+
+Regardless, this is the output of the initial conditions when generated with the 'full' magpinch case:
+
+<img src="athena_files/magnetic_field_y_one_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
+
+I have resorted back to the three-looped problem generator above, and intend on experimenting with different starting and ending indices. 
+
+I have also been trying to train ChatGPT on Athena to help with debugging, and it has started to give better and better suggestions. It seems to be convinced that the error I'm experiencing stems from the fact that I am not using a vector potential, and therefore simulating unphysical magnetic field conditions. While true, I do not believe this is the cause issue. After a little prodding, it pointed out that I am setting the x-, y-, and z-directions in all three loops. Instead, in the `for (int j=js; j<=je+1; j++)` loop, I should only be setting the `b.x2f` variable, because at `je+1`, the `b.x1f` and `b.x1f` are undefined. Similarly, in the x- and z-loops, I should only be setting the x- and z-magnetic fields (respectively). **THIS FIXES THE MAGNETIC FIELD PROBLEM**
 
 ## 05/01/24
 I have attempted to fill in everything, but the velocity, pressure, and density fields break when the indices are filled in with the following loop:
