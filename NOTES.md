@@ -96,7 +96,7 @@ When I tried to implement the field configuration we wanted originally, this is 
     }
 ```
 
-This does not work, because the face-centered fields were only being set in the j-direction, and not in the i- or k-directions. To hunt down this problem, we set the magnetic fields to zero, but recall, the pressure is set to the average magnetic pressure in the center of each cell. There were a few weeks earlier this semester where we hunted down *why* the pressure (and thermal energy) was so noisy in the initial conditions, and this is why. The pressure was being set to 0 when the magnetic fields were set to 0, which was filling the pressure fields with noise on order of machine precision ($1e-18$ to $1e-16$). This was fixed late in March (details/notes/few figures below). I decided instead of trying to debug the pressure fields in the case where $B=0$, to just resort to fixing the $B\neq0$ case because that is required for the interesting reconnection to occur.
+This does not work, because the face-centered fields were only being set in the j-direction, and not in the i- or k-directions. To hunt down this problem, we set the magnetic fields to zero, but recall, the pressure is set to the average magnetic pressure in the center of each cell. There were a few weeks earlier this semester where we hunted down *why* the pressure (and thermal energy) was so noisy in the initial conditions, and this is why. The pressure was being set to 0 when the magnetic fields were set to 0, which was filling the pressure fields with noise on order of machine precision ($1e-18$ to $1e-16$). Athena is smart, however, and after a single time step stabalized the pressure fields. Along the strongest velocities, the boundaaries gave us NaNs or 0s (I'm still not entirely sure how to check this) from the boundaries afterward. I used the VSCode debugger to hunt down the problem, because we thought the 'bad values' were coming from the boundary conditions. Through the debugger, I verified the boundary conditions within Athena's `bvals` methods were being handled correctlu. This was 'fixed' late in March (details/notes/few figures below). I decided instead of trying to debug the pressure fields in the case where $B=0$, to just resort to fixing the $B\neq0$ case because that is required for the interesting reconnection to occur, However, the B-fields were still not being set properly, so those instabilities/issues were just hiding the issues with the pressure, which eventually returned.
 
 So the new and improved problem generator magnetic field loops, which are closely mirrored from the magnoh.cpp problem generator look like this:
 
@@ -198,7 +198,19 @@ Regardless, this is the output of the initial conditions when generated with the
 
 I have resorted back to the three-looped problem generator above, and intend on experimenting with different starting and ending indices. 
 
-I have also been trying to train ChatGPT on Athena to help with debugging, and it has started to give better and better suggestions. It seems to be convinced that the error I'm experiencing stems from the fact that I am not using a vector potential, and therefore simulating unphysical magnetic field conditions. While true, I do not believe this is the cause issue. After a little prodding, it pointed out that I am setting the x-, y-, and z-directions in all three loops. Instead, in the `for (int j=js; j<=je+1; j++)` loop, I should only be setting the `b.x2f` variable, because at `je+1`, the `b.x1f` and `b.x1f` are undefined. Similarly, in the x- and z-loops, I should only be setting the x- and z-magnetic fields (respectively). **THIS FIXES THE MAGNETIC FIELD PROBLEM**
+I have also been trying to train ChatGPT on Athena to help with debugging, and it has started to give better and better suggestions. It seems to be convinced that the error I'm experiencing stems from the fact that I am not using a vector potential, and therefore simulating unphysical magnetic field conditions. While true, I do not believe this is the cause issue. After a little prodding, it pointed out that I am setting the x-, y-, and z-directions in all three loops. Instead, in the `for (int j=js; j<=je+1; j++)` loop, I should only be setting the `b.x2f` variable, because at `je+1`, the `b.x1f` and `b.x1f` are undefined. Similarly, in the x- and z-loops, I should only be setting the x- and z-magnetic fields (respectively). **THIS FIXES THE MAGNETIC FIELD PROBLEM**, and all the magnetic fields are fully filled in (as of today, May 1). Below are some plots about this issue, because it is the most recent.
+
+Below is the initial magnetic field configuration, with color representing magnetic fields in the y-direction, and vectors representing the directionality of the magnetic field of the fully fixed problem generator:
+
+<img src="athena_files/magnetic_field_y_three_looped_fixed_magpinch.png" alth="fixed_magpinch" width="400"/>
+
+Here are the initial pressure fields (left) of the initial conditions, and the pressure fields (right) after a single time-step:
+
+<img src="athena_files/pressure_three_looped_fixed_magpinch_0.png" alth="fixed_magpinch_pressure_0" width="400"/>     <img src="athena_files/pressure_three_looped_fixed_magpinch_1.png" alth="fixed_magpinch_pressure_1" width="400"/>
+
+Observe that despite the apparent correctness of the initial conditions, the pressure field is still broken over time, drawing in unknown errors from the boundary along fast inflows. The actual directory with real outputs is `magpinch_fixed_may1` for this simulation. Below are some multiplots showing other details:
+
+<img src="athena_files/multiplot_three_looped_fixed_magpinch_0.png" alth="multiplot_magpinch_pressure_0" width="400"/>     <img src="athena_files/multiplot_three_looped_fixed_magpinch_1.png" alth="multiplot_magpinch_pressure_1" width="400"/>
 
 ## 05/01/24
 I have attempted to fill in everything, but the velocity, pressure, and density fields break when the indices are filled in with the following loop:
@@ -208,6 +220,8 @@ for (int k=0; k<=ke+ks+1; k++) {
         for (int i=0; i<=ie+is+1; i++) {
 ```
 Regardless, the magnetic fields are reaching far into the ghost zones and the instabilities below are still not cooperating.
+
+I lied. ChatGPT figured it out. The face-centered magnetic fields only have face-values above je, ke, and ie in the j-, k-, and i-direction respectively. Therefore, we should only set the x, y, and z magnetic field when we iterate over ie+1, je+1, and ke+1, respectively. This fixes the magnetic field issue (pictures above, in the section called Comprehensive List of Everything... May 1). It does *not* fix the pressure issue where NaNs/zeros inflow from the boundary. This is now the same problem we had March 21, which kick-started this whole investigation.
 
 ## 04/09/24 - meeting with Brian
 Things to try:
