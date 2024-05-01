@@ -1,7 +1,7 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
 ## Comprehensive list of everything attempted as of May 1 2024
-The original goal was to simulate
+The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful. 
 
 
 ## 05/01/24
