@@ -1,5 +1,18 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## Comprehensive list of everything attempted as of May 1 2024
+The original goal was to simulate
+
+
+## 05/01/24
+I have attempted to fill in everything, but the velocity, pressure, and density fields break when the indices are filled in with the following loop:
+```c++
+for (int k=0; k<=ke+ks+1; k++) {
+    for (int j=0; j<=je+ks+1; j++) {
+        for (int i=0; i<=ie+is+1; i++) {
+```
+Regardless, the magnetic fields are reaching far into the ghost zones and the instabilities below are still not cooperating.
+
 ## 04/09/24 - meeting with Brian
 Things to try:
 - make sure x&z values are set to 0 out into the ghost zones for mag fields
@@ -68,7 +81,7 @@ Inside Athena++, main.cpp is the brain of the operation. There are 10 main steps
     - This part goes WAY over my head, because its full of `if (integrator == "thing") {` commands, which I understand at face value, but the details of this step are lost on me.
     - I believe this step is initializing the integrator so it can be called faster (?) in the future.
  6. (Line 364) Initial conditions from problem generator.
-    - This is where the "Initialize()" function is called, but I cannot find *where* this is defined. TODO find where Initialize function is defined.
+    - This is where the "Initialize()" function is called, but I cannot find *where* this is defined. (old to do) find where Initialize function is defined.
  7. (Line 390) Create output object, and output ICs
     - This part is not the problem part, and there is nothing immediately confusing about it, so I am moving on.
     - Run from src/outputs/outputs.cpp (and .hpp)
@@ -97,7 +110,7 @@ Inside Athena++, main.cpp is the brain of the operation. There are 10 main steps
     
 
 ## 03/25/24
-TODO from meeting today:
+To do list (completed)
  - Make a custom flow chart to track what Athena is actually doing
  - Set up debugger to track boundary conditions, and values. Make sure it is actually just copying rows and columns of data across to the boundary and that the zero-gradient is doing what I need it to be doing
  - Make plots of LOTS of fields and values to see if we can spot where the bad values are arriving.
