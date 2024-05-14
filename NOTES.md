@@ -1,5 +1,43 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## Notes from CharmNet Video Lecture - Nov 2022
+Thermonuclear fusion is the process whereby, upon reaching sufficiently high temperatures and densities, lighter nuclei combine to form heavier ones, converting a tiny amount of mass into a lot of energy (according to $E=mc^2$. About 3 tons of seawater and 10 tons of lithium ore would be needed to operate 1GW powerplant for a year.
+
+Required conditions for thermonuclear fusion:
+- 1e8K to overcome electrostatic repulsion (hotter than sun) - too hot for materials because they melt
+- At such temperatures, plasma forms because gas becomes ionized
+
+#### Magnetic confinement: 
+Organized particle motions because gyromotion of ions and electrons. This is where toroidal confinement comes from, because we need a 'loop' to keep the plasma confined. Generally, the concept of toroidal confinement is sound, but the collective effects, turbulence, and small instabilities run it into the walls of the reactors which shut everything down (???What instabilities???)
+
+#### Inertial confinement:
+Shine a laser onto a cylinder or tablet of some kind which vaporizes (ablates) the capsule and that explosion drives the fuel inside the capsule to ignite fusion.
+
+### The role of computing in thermonuclear fusion: virtual experiments
+Fusion experiments are getting bigger and more expensive, which does not allow for iteration and experimnetation. A successful fusion reactor should confine extremely hot matter at sufficient densities for sufficiently long, which leaves little room for error. "Virtual experiments" are needed to find suitable operating regimes and to guide construction, optimization, and operation of future fusion reactors.
+
+The "Tyranny of scales" or "curse of dimensionality" represent the extreme separation of time scales and spatial scales because gyrofrequencies of electrons in tokamaks are roughly $10^-{10}$ seconds, where current diffusions are on order $10$ seconds, while in spatial scales electron gyroradii are $10^{-5}$ meters, while electron-ion mean free path is on order $10^2$ meters.
+
+Plasma frequency (very fast) is the timescale of restoration of charge imbalance in the plasma $\omega=\sqrt{\frac{q^2n}{\epsilon m}}$. Debye length (very small) is the length scale beyond which charge separation cannot be sustained ($\lambda=\sqrt{\frac{\epsilon T}{q^2n}}$. The gyroradius is related to the gyrofrequency based on the thermal speeds. Collisional mean free path is given by a ratio of thermal velocity to collision frequency, which affects momentum and energy transport, and therefore confinement and thermal equilibrium. Electrons are more collisional than ions by $\sqrt{mi/me}$ (note I cannot use subscripts in markdown because it thinks I want italics).
+
+Plasma physicists have outperformed improvements from hardware alone by many orders of magnitude because genius algorithms.
+
+Liouville's equations (an intractible problem) leads to the "BBGKY" hierarchy and the boltzmann equation, which assumes instead of an arbitrary N particles, it chooses "S" particles, and models everything else with collision operators. The Boltzmann equation is not a first principle equation, it already assumes many things. This leads us to the "tractable first-principles model"
+
+### Vlasov-Fokker-Planck equation (+ Maxwell)
+Asymptotic model reduction, we get the following properties about magnetic vs inertial confinement fusion:
+#### Magnetic fusion key asymptotic parameters (and what they depend on)
+- Plasma frequency (quasineutrality, ambipolarity) 
+- Gyrofrequency and gyroradius (magnetic field strenth)
+- Collision frequency and mean free path (collisionality)
+- Ion/electron skin depths (length sclase where kinetic effects become important)
+#### Inertial fusion key asymptotic parameters
+- plasma frequency
+- plasma collisionality
+- plasma $\beta$ (ratio of thermal to magnetic pressure)
++ In ICF, plasma $\beta$ can get very large. This is because the thermal energy that functions as an explosion is huge compared to the magnetic fields that generate shocks all over the place, and dominate any magnetic fields that are present in the plasmas. 
+
+
 ## Comprehensive list of everything attempted as of May 1 2024
 The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful, and can be seen at athena_files/zpinch5_density_Bfield.mp4. To get closer to the MARZ experiment, we added a slight perturbation in the radial direction, and set the resistivity (eta_ohm) in the athinput file to be nonzero to trigger magnetic reconnection. In the complicated simulation, we got this to work, and can be seen in athena_files/zpinchCP3_density_velocity.mp4.
 
