@@ -1,5 +1,67 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## Early summer 2024
+
+I got sick... But I read some papers and wrote the magpinchsimple problem generator:
+
+```c++
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        // Volume centered coordinates and quantities
+        Real x1,x2,dx;
+      
+        x1 = pcoord->x1v(i);
+        dx = pcoord->x1v(i+1) - x1;
+        x2 = pcoord->x2v(j);
+
+        Real rho = rho0*std::pow(std::abs(x1), alpha/4);
+        Real P   = P0  *std::pow(std::abs(x1), 2*beta);
+
+        phydro->u(IDN,k,j,i) = rho;         // Density
+
+        // x momentum
+        phydro->u(IM1,k,j,i) = -rho*vin*std::tanh(x1/(2*dx))*(1+0.01*std::cos(x2/2));
+
+        phydro->u(IM2,k,j,i) = 0.0;         // Momentum in x2
+        phydro->u(IM3,k,j,i) = 0.0;         // Momentum in x3
+        phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vin); // Total energy
+        debug_tester = P/gm1 + 0.5*rho*SQR(vin); // TODO REMOVE
+      }
+    }
+  }
+
+    Real x1, dx;
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {    // j loop for(int j=0; j<=je+js; i++)
+          x1 = pcoord->x1v(i);
+          dx = pcoord->x1v(i+1) - x1;
+          pfield->b.x2f(k,j,i) = b*std::tanh(x1/(2*dx));
+        }
+      }
+    }
+```
+
+Unfortunately, I'm getting weird zeros (?) all over the place in a region close to the origin. Here is the initial conditions at t=0 (when using std::cos() on left and std::sin() on right):
+
+<img src="athena_files/magpinchsimple_test_funky_pressure_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
+<img src="athena_files/magpinchsimple_test_funky_pressure_sin_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
+
+## Meeting with Brian May 2 2024
+
+We are pushing the simulations very hard...
+
+Consider trying the magnetic field to be on order $tanh(x/2\Delta x)$, and the velocity to be on order $tanh(x/\Delta x)$
+
+To be more precise:
+
+$$v_x=-v0 tanh(x/2\Delta x)$$
+
+$$B_y=btanh(x/ 2\Delta x)$$
+
+Then make velocity to be on order equivalent to Magnetic Field, and thermal pressure ($v^2~B^2~P_th$), and set density and thermal pressure to be constant.
+
 ## Comprehensive list of everything attempted as of May 1 2024
 The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful, and can be seen at athena_files/zpinch5_density_Bfield.mp4. To get closer to the MARZ experiment, we added a slight perturbation in the radial direction, and set the resistivity (eta_ohm) in the athinput file to be nonzero to trigger magnetic reconnection. In the complicated simulation, we got this to work, and can be seen in athena_files/zpinchCP3_density_velocity.mp4.
 
