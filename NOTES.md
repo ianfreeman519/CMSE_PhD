@@ -1,5 +1,27 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## May 28 2024
+
+I fixed the multi-plot movie. ChatGPT, coupled with some difficult-to-find forum posts from years ago allowed me to come up with the `makeMovie.py` stored within the athena_files directory. It utilizes this chunk of code (which I still don't _entirely_ understand, but it works so I'm not going to complain too much):
+```python
+    # Save the figure to a buffer with increased DPI
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=200)  # Increase DPI
+    buf.seek(0)
+    frames.append(np.array(plt.imread(buf)))
+    buf.close()
+    plt.close(fig)  # Close the figure to avoid displaying it
+```
+The script converts the YT plot to matplotlib objects fig and ax, which then get saved using matplotlib commands. Then the raw data is saved as a buffer which makes the pointer point to the end of the buffer. The `buf.seek(0)` sets the pointer to the beginning of the buffer so the `frames.append(np.array(plt.imread(buf)))` can read the buffer from the beginning as an np.array image. Then the resources used with the buffer are closed, and the plt figure is closed, because it has been saved in the frames array.
+
+Brian suggested that I make a github wiki page on the units, which I need to remember to link within this document for my own personal records. That is what I will be working on today.
+
+## After May 20
+
+After an intense amount of experimentation, I discovered the 'prim' dataset in athdf files are full matrices representing first the density, then pressure, then velocity fields. Now, what the difference between that and x1v and x1f are, I have absolutely no clue.
+
+Making the plots has proven a lot more difficult than I originally thought it would. For some reason when I submit a script to slurm it doesn't like it, but when I run the python command to make the movie it does it no problem.
+
 ## Early summer 2024
 
 I got sick... But I read some papers and wrote the magpinchsimple problem generator:
@@ -47,6 +69,15 @@ Unfortunately, I'm getting weird zeros (?) all over the place in a region close 
 
 <img src="athena_files/magpinchsimple_test_funky_pressure_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
 <img src="athena_files/magpinchsimple_test_funky_pressure_sin_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
+
+Things to try:
+- try setting athinput.magpinchsimple $\beta=1$
+
+Things to look up:
+- running simulations/analysis on a galaxy node (see pinned mattermost messages)
+- shared partition
+- temporary disk space (/mnt/tmp)
+- RAM Disk (/mnt/ramddisk???)
 
 ## Meeting with Brian May 2 2024
 
