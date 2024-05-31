@@ -1,5 +1,27 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## May 30 2024
+
+I made the units wiki page, which is going to be very helpful for this next step, which is matching up the Athena++ simulations with the simulations from [the radiative cooling plasmoid paper](https://arxiv.org/abs/2401.04643). In it, the preshock velocity is about 140km/s, and the magnetic field is around 4T=4e4Gauss. This is what I will be attempting to adopt into my simulations.
+
+In preparation for this I tweaked the `magpinchsimple.cpp` problem generator to include the following line (and accept appropriate inputs from athinput):
+
+```c++
+  vx = -vin*std::tanh(x1/(10*dx))*(1+0.5*std::cos(N*2*M_PI*x2/L));
+```
+
+They say that they achieve reconnection at lundquist numbers of 120. Canonically, we consider the critical lundquist number of 10,000, so I will meet them in the middle and aim for a Lundquist number of 1000. This should allow me to estimate an order of magnitude for the resistivity:
+
+
+The paper claims an ion density of around 6e18 cm$^-3$ which means I need to input 1.4 x mp(g) x 6e18 = 1.4e-6
+
+$$SL = Lv_A/\eta$$
+$$S_L= 10^3 = \frac{B*L}{\eta\sqrt{\mu0 \rho}}$$
+$$\longrarrow \eta = \frac{B*L}{1e3 \sqrt{\mu0 \rho}}$$
+$$\longrarrow \eta = \frac{4e4 * 0.6}{1e3 \sqrt{1 * 1.4e-6}}
+
+According to this calculation, the resistivity is 2e4...
+
 ## May 28 2024
 
 I fixed the multi-plot movie. ChatGPT, coupled with some difficult-to-find forum posts from years ago allowed me to come up with the `makeMovie.py` stored within the athena_files directory. It utilizes this chunk of code (which I still don't _entirely_ understand, but it works so I'm not going to complain too much):

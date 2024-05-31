@@ -4,13 +4,18 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import io
+import time
 
 # Paths and file settings
-scratchPath = "/mnt/gs21/scratch/freem386/new_pgen_magpinch/"
+scratchPath = "/mnt/gs21/scratch/freem386/simple_magpinch_animation2/"
 basename = "MPsimple"
-f0, fn = 0, 100
+f0, fn = 0, 400
 step, width = 1, 5
 files = [scratchPath + basename + ".out2." + str(f).zfill(width) + ".athdf" for f in np.arange(f0, fn+1, step, dtype=int)]
+
+# Making timing list so estimates on completion can be calculated:
+times = np.zeros(fn-f0+1)
+times[:] = np.nan
 
 # Load dataset series
 ts = yt.DatasetSeries(files)
@@ -21,7 +26,8 @@ frames = []
 
 # Loop through indices
 for index in range(len(files)):  # Ensure to loop over available datasets
-    print(index)
+    time0 = time.time()
+    print("Writing index ", index, " \nEstimated time remaining: ", (fn-index)*np.nanmean(times))
     ds = ts[index]
     fields = [
         ('athena_pp', 'vel1'), ('gas', 'magnetic_field_x'), ('gas', 'mach_number'), ('gas', 'pressure'),
@@ -59,6 +65,7 @@ for index in range(len(files)):  # Ensure to loop over available datasets
     frames.append(np.array(plt.imread(buf)))
     buf.close()
     plt.close(fig)  # Close the figure to avoid displaying it
+    times[index] = time.time() - time0
     
 # Create an animation from frames
 fig, ax = plt.subplots()
