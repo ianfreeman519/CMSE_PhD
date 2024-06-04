@@ -1,2 +1,0 @@
-/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/makeMovie.py:30: RuntimeWarning: Mean of empty slice
-  print("Writing index ", index, " \nEstimated time remaining: ", (fn-index)*np.nanmean(times))

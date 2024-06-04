@@ -9,7 +9,7 @@ import time
 # Paths and file settings
 scratchPath = "/mnt/gs21/scratch/freem386/simple_magpinch_animation2/"
 basename = "MPsimple"
-f0, fn = 0, 400
+f0, fn = 0, 200
 step, width = 1, 5
 files = [scratchPath + basename + ".out2." + str(f).zfill(width) + ".athdf" for f in np.arange(f0, fn+1, step, dtype=int)]
 
@@ -19,7 +19,7 @@ times[:] = np.nan
 
 # Load dataset series
 ts = yt.DatasetSeries(files)
-print("number of files: ", len(files))
+print("number of files: ", len(files), flush=True)
 
 # Initialize an empty list to store frames as image buffers
 frames = []
@@ -27,7 +27,7 @@ frames = []
 # Loop through indices
 for index in range(len(files)):  # Ensure to loop over available datasets
     time0 = time.time()
-    print("Writing index ", index, " \nEstimated time remaining: ", (fn-index)*np.nanmean(times))
+    print("Writing index ", index, " \nEstimated time remaining: ", (fn-index)*np.nanmean(times), flush=True)
     ds = ts[index]
     fields = [
         ('athena_pp', 'vel1'), ('gas', 'magnetic_field_x'), ('gas', 'mach_number'), ('gas', 'pressure'),

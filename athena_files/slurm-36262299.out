@@ -1,0 +1,436 @@
+number of files:  201
+/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/makeMovie.py:30: RuntimeWarning: Mean of empty slice
+  print("Writing index ", index, " \nEstimated time remaining: ", (fn-index)*np.nanmean(times), flush=True)
+Writing index  0  
+Estimated time remaining:  nan
+Writing index  1  
+Estimated time remaining:  2094.9165449142456
+Writing index  2  
+Estimated time remaining:  2172.9481558799744
+Writing index  3  
+Estimated time remaining:  2190.212047815323
+Writing index  4  
+Estimated time remaining:  2204.073144674301
+Writing index  5  
+Estimated time remaining:  2190.730322599411
+Writing index  6  
+Estimated time remaining:  2181.6710731983185
+Writing index  7  
+Estimated time remaining:  2171.792645795005
+Writing index  8  
+Estimated time remaining:  2163.5606174468994
+Writing index  9  
+Estimated time remaining:  2159.7156240410272
+Writing index  10  
+Estimated time remaining:  2148.0550034046173
+Writing index  11  
+Estimated time remaining:  2137.806626623327
+Writing index  12  
+Estimated time remaining:  2125.7838804721832
+Writing index  13  
+Estimated time remaining:  2115.514256972533
+Writing index  14  
+Estimated time remaining:  2107.3620890889847
+Writing index  15  
+Estimated time remaining:  2092.774941047033
+Writing index  16  
+Estimated time remaining:  2080.9075379371643
+Writing index  17  
+Estimated time remaining:  2069.7678403573877
+Writing index  18  
+Estimated time remaining:  2059.343211279975
+Writing index  19  
+Estimated time remaining:  2050.4299017379158
+Writing index  20  
+Estimated time remaining:  2036.3794734478
+Writing index  21  
+Estimated time remaining:  2025.1001356669835
+Writing index  22  
+Estimated time remaining:  2013.3588526899164
+Writing index  23  
+Estimated time remaining:  2000.9341111701467
+Writing index  24  
+Estimated time remaining:  1988.169854958852
+Writing index  25  
+Estimated time remaining:  1977.0582842826843
+Writing index  26  
+Estimated time remaining:  1966.0635209633754
+Writing index  27  
+Estimated time remaining:  1953.8758768947037
+Writing index  28  
+Estimated time remaining:  1941.3406225953781
+Writing index  29  
+Estimated time remaining:  1929.6878119419362
+Writing index  30  
+Estimated time remaining:  1917.6806399822237
+Writing index  31  
+Estimated time remaining:  1906.1114932337114
+Writing index  32  
+Estimated time remaining:  1892.881971001625
+Writing index  33  
+Estimated time remaining:  1879.282407392155
+Writing index  34  
+Estimated time remaining:  1866.919966361102
+Writing index  35  
+Estimated time remaining:  1853.7954288891383
+Writing index  36  
+Estimated time remaining:  1843.7658869160546
+Writing index  37  
+Estimated time remaining:  1833.5125223752614
+Writing index  38  
+Estimated time remaining:  1823.110547906474
+Writing index  39  
+Estimated time remaining:  1812.6790920526555
+Writing index  40  
+Estimated time remaining:  1802.377109527588
+Writing index  41  
+Estimated time remaining:  1792.4780011758573
+Writing index  42  
+Estimated time remaining:  1782.3204723426275
+Writing index  43  
+Estimated time remaining:  1772.1436525555544
+Writing index  44  
+Estimated time remaining:  1761.7718565247276
+Writing index  45  
+Estimated time remaining:  1751.1951189570957
+Writing index  46  
+Estimated time remaining:  1740.551927120789
+Writing index  47  
+Estimated time remaining:  1730.0706646746778
+Writing index  48  
+Estimated time remaining:  1719.4940076271694
+Writing index  49  
+Estimated time remaining:  1708.8421958806564
+Writing index  50  
+Estimated time remaining:  1698.4918563365936
+Writing index  51  
+Estimated time remaining:  1687.721098535201
+Writing index  52  
+Estimated time remaining:  1676.8497378092545
+Writing index  53  
+Estimated time remaining:  1665.9280006885529
+Writing index  54  
+Estimated time remaining:  1655.4050762388442
+Writing index  55  
+Estimated time remaining:  1644.1408033370972
+Writing index  56  
+Estimated time remaining:  1632.8937974657333
+Writing index  57  
+Estimated time remaining:  1621.760606941424
+Writing index  58  
+Estimated time remaining:  1610.5475636843976
+Writing index  59  
+Estimated time remaining:  1599.3836596254575
+Writing index  60  
+Estimated time remaining:  1588.0551725228627
+Writing index  61  
+Estimated time remaining:  1576.8957618259992
+Writing index  62  
+Estimated time remaining:  1566.0326440872684
+Writing index  63  
+Estimated time remaining:  1554.942106254517
+Writing index  64  
+Estimated time remaining:  1544.2528538107872
+Writing index  65  
+Estimated time remaining:  1533.1811051735513
+Writing index  66  
+Estimated time remaining:  1521.8861584302151
+Writing index  67  
+Estimated time remaining:  1510.8829667568207
+Writing index  68  
+Estimated time remaining:  1499.818908438963
+Writing index  69  
+Estimated time remaining:  1488.7566316093225
+Writing index  70  
+Estimated time remaining:  1478.552972487041
+Writing index  71  
+Estimated time remaining:  1466.9526508559643
+Writing index  72  
+Estimated time remaining:  1456.2365917629666
+Writing index  73  
+Estimated time remaining:  1445.0229224930072
+Writing index  74  
+Estimated time remaining:  1433.7370322652764
+Writing index  75  
+Estimated time remaining:  1422.3793359597523
+Writing index  76  
+Estimated time remaining:  1411.1506626229536
+Writing index  77  
+Estimated time remaining:  1399.7382766364458
+Writing index  78  
+Estimated time remaining:  1388.434692395039
+Writing index  79  
+Estimated time remaining:  1377.1241201479224
+Writing index  80  
+Estimated time remaining:  1365.756635427475
+Writing index  81  
+Estimated time remaining:  1354.2952094254672
+Writing index  82  
+Estimated time remaining:  1342.9485758048734
+Writing index  83  
+Estimated time remaining:  1331.6790383379143
+Writing index  84  
+Estimated time remaining:  1320.3846775577183
+Writing index  85  
+Estimated time remaining:  1309.146265590892
+Writing index  86  
+Estimated time remaining:  1297.9004883877067
+Writing index  87  
+Estimated time remaining:  1286.5794721060786
+Writing index  88  
+Estimated time remaining:  1275.3312921524048
+Writing index  89  
+Estimated time remaining:  1263.9948389262295
+Writing index  90  
+Estimated time remaining:  1252.8264731301201
+Writing index  91  
+Estimated time remaining:  1241.423760505823
+Writing index  92  
+Estimated time remaining:  1230.1133593579996
+Writing index  93  
+Estimated time remaining:  1218.7406730882583
+Writing index  94  
+Estimated time remaining:  1207.2787301946194
+Writing index  95  
+Estimated time remaining:  1195.733014884748
+Writing index  96  
+Estimated time remaining:  1183.8009346922238
+Writing index  97  
+Estimated time remaining:  1172.221914065253
+Writing index  98  
+Estimated time remaining:  1160.874373066182
+Writing index  99  
+Estimated time remaining:  1149.5611723432637
+Writing index  100  
+Estimated time remaining:  1138.2012300491333
+Writing index  101  
+Estimated time remaining:  1126.8570284206087
+Writing index  102  
+Estimated time remaining:  1115.4365014188431
+Writing index  103  
+Estimated time remaining:  1104.0351477363733
+Writing index  104  
+Estimated time remaining:  1092.3774540974543
+Writing index  105  
+Estimated time remaining:  1081.1020901203156
+Writing index  106  
+Estimated time remaining:  1069.6300150358452
+Writing index  107  
+Estimated time remaining:  1058.242676255859
+Writing index  108  
+Estimated time remaining:  1046.8332335330822
+Writing index  109  
+Estimated time remaining:  1035.5397721277463
+Writing index  110  
+Estimated time remaining:  1023.9300175796856
+Writing index  111  
+Estimated time remaining:  1012.6685966650646
+Writing index  112  
+Estimated time remaining:  1001.1889889921462
+Writing index  113  
+Estimated time remaining:  989.829020939042
+Writing index  114  
+Estimated time remaining:  978.5204676954371
+Writing index  115  
+Estimated time remaining:  967.138927978018
+Writing index  116  
+Estimated time remaining:  955.6489597764509
+Writing index  117  
+Estimated time remaining:  944.210939969772
+Writing index  118  
+Estimated time remaining:  932.833860946914
+Writing index  119  
+Estimated time remaining:  921.4886236210831
+Writing index  120  
+Estimated time remaining:  910.15940173467
+Writing index  121  
+Estimated time remaining:  898.7501587138688
+Writing index  122  
+Estimated time remaining:  887.5187538959941
+Writing index  123  
+Estimated time remaining:  876.2207630940569
+Writing index  124  
+Estimated time remaining:  864.7508787339733
+Writing index  125  
+Estimated time remaining:  853.3910798549651
+Writing index  126  
+Estimated time remaining:  841.9817301129538
+Writing index  127  
+Estimated time remaining:  830.7427701968846
+Writing index  128  
+Estimated time remaining:  819.3829413950443
+Writing index  129  
+Estimated time remaining:  808.0160646919132
+Writing index  130  
+Estimated time remaining:  796.5215152777159
+Writing index  131  
+Estimated time remaining:  785.1341272601645
+Writing index  132  
+Estimated time remaining:  773.8296424909071
+Writing index  133  
+Estimated time remaining:  762.4648905607094
+Writing index  134  
+Estimated time remaining:  750.8340129781125
+Writing index  135  
+Estimated time remaining:  739.2458688859585
+Writing index  136  
+Estimated time remaining:  727.5462267258588
+Writing index  137  
+Estimated time remaining:  715.907711636411
+Writing index  138  
+Estimated time remaining:  704.5068889977276
+Writing index  139  
+Estimated time remaining:  693.1043427728063
+Writing index  140  
+Estimated time remaining:  681.7060817650387
+Writing index  141  
+Estimated time remaining:  670.1735496216633
+Writing index  142  
+Estimated time remaining:  658.5092746405534
+Writing index  143  
+Estimated time remaining:  647.0574649747435
+Writing index  144  
+Estimated time remaining:  635.4599607653088
+Writing index  145  
+Estimated time remaining:  623.9894455219137
+Writing index  146  
+Estimated time remaining:  612.3879456879341
+Writing index  147  
+Estimated time remaining:  600.9281131102114
+Writing index  148  
+Estimated time remaining:  589.3965866243517
+Writing index  149  
+Estimated time remaining:  577.9920024407791
+Writing index  150  
+Estimated time remaining:  566.4832603136698
+Writing index  151  
+Estimated time remaining:  555.0245300523493
+Writing index  152  
+Estimated time remaining:  543.5948821118003
+Writing index  153  
+Estimated time remaining:  532.102338783102
+Writing index  154  
+Estimated time remaining:  520.714930840901
+Writing index  155  
+Estimated time remaining:  509.25520443147224
+Writing index  156  
+Estimated time remaining:  497.8624300406529
+Writing index  157  
+Estimated time remaining:  486.41749632586334
+Writing index  158  
+Estimated time remaining:  475.00251236444785
+Writing index  159  
+Estimated time remaining:  463.561638241294
+Writing index  160  
+Estimated time remaining:  452.1636707186699
+Writing index  161  
+Estimated time remaining:  440.77072206343183
+Writing index  162  
+Estimated time remaining:  429.41194054226816
+Writing index  163  
+Estimated time remaining:  418.1105775803876
+Writing index  164  
+Estimated time remaining:  406.7815095157158
+Writing index  165  
+Estimated time remaining:  395.583971861637
+Writing index  166  
+Estimated time remaining:  384.32332434137186
+Writing index  167  
+Estimated time remaining:  373.08913443474
+Writing index  168  
+Estimated time remaining:  361.88727283477783
+Writing index  169  
+Estimated time remaining:  350.65009072828576
+Writing index  170  
+Estimated time remaining:  339.4399997907526
+Writing index  171  
+Estimated time remaining:  328.17208942335253
+Writing index  172  
+Estimated time remaining:  316.8640594537868
+Writing index  173  
+Estimated time remaining:  305.56791020542215
+Writing index  174  
+Estimated time remaining:  294.27490716144956
+Writing index  175  
+Estimated time remaining:  282.99896584238326
+Writing index  176  
+Estimated time remaining:  271.7238734852184
+Writing index  177  
+Estimated time remaining:  260.38492660064486
+Writing index  178  
+Estimated time remaining:  248.99563140279793
+Writing index  179  
+Estimated time remaining:  237.63386219973006
+Writing index  180  
+Estimated time remaining:  226.2571518950992
+Writing index  181  
+Estimated time remaining:  214.93231500578187
+Writing index  182  
+Estimated time remaining:  203.61110016801857
+Writing index  183  
+Estimated time remaining:  192.29068105859182
+Writing index  184  
+Estimated time remaining:  180.96307669515195
+Writing index  185  
+Estimated time remaining:  169.64286330583934
+Writing index  186  
+Estimated time remaining:  158.35803277774522
+Writing index  187  
+Estimated time remaining:  147.03085451967576
+Writing index  188  
+Estimated time remaining:  135.71525456550273
+Writing index  189  
+Estimated time remaining:  124.40215461973159
+Writing index  190  
+Estimated time remaining:  113.1018196030667
+Writing index  191  
+Estimated time remaining:  101.77580967249047
+Writing index  192  
+Estimated time remaining:  90.46171503265698
+Writing index  193  
+Estimated time remaining:  79.13539199137317
+Writing index  194  
+Estimated time remaining:  67.82128614494482
+Writing index  195  
+Estimated time remaining:  56.502486021090775
+Writing index  196  
+Estimated time remaining:  45.19822365410474
+Writing index  197  
+Estimated time remaining:  33.89489613692773
+Writing index  198  
+Estimated time remaining:  22.599790021626635
+Writing index  199  
+Estimated time remaining:  11.298580497952562
+Writing index  200  
+Estimated time remaining:  0.0
+JobId=36262299 JobName=makeMovie
+   UserId=freem386(6187794) GroupId=pa(2003) MCS_label=N/A
+   Priority=60362 Nice=0 Account=general QOS=freem386
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:42:23 TimeLimit=03:59:00 TimeMin=N/A
+   SubmitTime=2024-06-04T10:30:33 EligibleTime=2024-06-04T10:30:33
+   AccrueTime=2024-06-04T10:30:33
+   StartTime=2024-06-04T10:30:38 EndTime=2024-06-04T14:29:38 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2024-06-04T10:30:38 Scheduler=Main
+   Partition=general-short AllocNode:Sid=dev-intel18:39233
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=lac-059
+   BatchHost=lac-059
+   NumNodes=1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=32G,node=1,billing=4980
+   AllocTRES=cpu=1,mem=32G,node=1,billing=4980
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryCPU=32G MinTmpDiskNode=0
+   Features=[intel14|intel16|intel18|(amr|acm)|nvf|nal|nif] DelayBoot=00:00:00
+   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
+   Command=/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/submissionMakeMovie.sb
+   WorkDir=/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files
+   Comment=stdout=/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/slurm-36262299.out 
+   StdErr=/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/slurm-36262299.out
+   StdIn=/dev/null
+   StdOut=/mnt/ufs18/home-241/freem386/CMSE_PhD/athena_files/slurm-36262299.out
+   Power=
+   MailUser=freem386@msu.edu MailType=INVALID_DEPEND,BEGIN,END,FAIL,REQUEUE,STAGE_OUT
+   
+

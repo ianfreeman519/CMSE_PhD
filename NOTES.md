@@ -1,5 +1,27 @@
 # Research "Notebook" to track changes made in certain scripts and codes
 
+## Updates as of June 4
+
+I added a 'smoothness' parameter to the problem generator to allow a little more fine-tuning in the tanh functions without having to recompile.
+
+I wrote an animation script that works on slurm so I can make a bunch of simulation animations simultanously, but they keep running out of memory. I need to figure out how to fix that so they stop crashing on me. Regardless, I got reconnection to happen!
+
+Below is the magpinchsimple.cpp problem generator, with the following physical properties:
+
+$$\rho=(1.4\times 10^{-6}) |x|^1.25$$
+$$\gamma = 1.2$$
+$$P = 4 \pi |B|^2 \times 10^{-6} \times x^5$$
+$$\text{specific int energy}=\frac{P}{\gamma-1}+\frac{1}{2}\rho vx^2$$
+$$vx = 1.4\times 10^7 \text{tanh}(Lx/'smoothness')(1+\frac{1}{2}cos(\frac{2N\pi y}{L}))$$
+
+I'm not super confident the $P/(\gamma-1)$ makes sense physically, and I'm also concerned about the density being zero near the origin, but the simulation outputs look really promising (**each timestep is 0.1ns**):
+
+<img src="athena_files/magpinchrealistic_reconnection_event_0.png" alth="reconnection_ICs" width="400"/>
+
+<img src="athena_files/magpinchrealistic_reconnection_event_100.png" alth="reconnection_midstep" width="400"/>
+
+<img src="athena_files/magpinchrealistic_reconnection_event_400.png" alth="reconnection_midstep" width="400"/>
+
 ## May 30 2024
 
 I made the units wiki page, which is going to be very helpful for this next step, which is matching up the Athena++ simulations with the simulations from [the radiative cooling plasmoid paper](https://arxiv.org/abs/2401.04643). In it, the preshock velocity is about 140km/s, and the magnetic field is around 4T=4e4Gauss. This is what I will be attempting to adopt into my simulations.
@@ -18,7 +40,7 @@ The paper claims an ion density of around 6e18 cm$^-3$ which means I need to inp
 $$SL = Lv_A/\eta$$
 $$S_L= 10^3 = \frac{B*L}{\eta\sqrt{\mu0 \rho}}$$
 $$\longrarrow \eta = \frac{B*L}{1e3 \sqrt{\mu0 \rho}}$$
-$$\longrarrow \eta = \frac{4e4 * 0.6}{1e3 \sqrt{1 * 1.4e-6}}
+$$\longrarrow \eta = \frac{4e4 * 0.6}{1e3 \sqrt{1 * 1.4e-6}}$$
 
 According to this calculation, the resistivity is 2e4...
 
