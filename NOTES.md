@@ -1,4 +1,58 @@
-# Research "Notebook" to track changes made in certain scripts and codes
+# Research "Notebook"
+To track changes made in certain scripts and codes
+
+## June 8/10
+
+### TODO
+- Fill out a pre-approval trip form for both HEDSS and ZFS
+- Register for the Z-fundamental science on account number RC114586 (charmNET DOE number)
+- After I get back, make sure to pull DOE funding first, then CharmNET will pay for rest.
+- Sign up to request student support (look at forwarded email from Brian)
+- Think about what simulations i wanna run for the next year and how long/how much they will cost
+
+- Possibile sources of goofy mach numbers:
+  + resistivity (?)
+    - Double check the units (orders of mag off?)
+    - 1 Set resistivity to 0?
+  + reconstruction method (?)
+    - default is linear
+    - 2 try setting to "PLM applied to characteristic variables" [go here](https://github.com/PrincetonUniversity/athena/wiki/The-Input-File)
+  + Integrator (?)
+    - currently set to vl2
+  + Riemann solver (?)
+    - currently set to HLLE
+- [FLASH docs might be helpful](https://flash.rochester.edu/site/flashcode/user_support/flash4_ug_4p8/node192.html#SECTION010124000000000000000) 
+
+I reformatted the movies!!! But I also learned my resolution was **TODO** high because you can't actually make out the center regions in the multi-plot animations. I need to rerun the simulations with a lower resolution (probably half) so you can make out the details in the center interesting region (see below). For reference in the future, here is the command which did it:
+
+`ffmpeg -i simulation_animation.mp4 -vf "crop=in_w*8/10:in_h*5/10:in_w/10:in_h*30/100" -c:a copy cropped_animation.mp4`
+
+the `-vf "crop=final_width:final_height:top_left_pixel_x:top_left_pixel_y` option is finnicky because there is no feedback, but a good way to format the output pixel positions and final dimensions is in relation to the input `in_h` and `in_w` pixel counts. You can also use `out_w` and `out_h` but I didn't try this. The code above: `"crop=in_w*8/10:in_h*5/10:in_w/10:in_h*30/100"` crops the input width to 8/10 the original value, and the heigh to 5/10 the original value. Similarly, it puts the top left corner (measured from the original top left corner) 1/10 of the original input width to the right, and 3/10 the original input height down. For a better explanation with pictures, [go here](https://video.stackexchange.com/questions/4563/how-can-i-crop-a-video-with-ffmpeg).  [Also, here is a useful cheat sheet with other ffmpeg commands](https://eruhinim.com/h/ffmpeg/).
+
+Mach speeds and scaling relations for ideal gasses (anything that uses a $P=\rho^\gamma$ scaling relation is an ideal gas):
+
+| Name | Formula |
+| ---- | ------- |
+| Alfven Speed | $VA=\frac{B}{\sqrt{4\pi\rho}}$ |
+| Magnetic Mach Number | $MA=\frac{u}{VA}$ |
+| Sound Speed | $CS=\sqrt{\gamma P}{\rho}\propto T^{1/2}$ |
+| Sonic Mach Number | $MS = \frac{u}{CS}$ |
+| Ideal Gas law | $P=nkT$ |
+| Density Definition | $\rho=n m_p \mu$ |
+| Mean Molecular Mass | $\mu = \text{Mass Density (wrt proton)} = \frac{\langle m \rangle}{m_p}$ |
+| Plasma Parameter | $\beta=\frac{P(thermal)}{P(magnetic)}\propto\frac{T}{B^2}$ |
+
+YT Calculates the `('gas', 'mach_number')` parameter from a ratio of velocity magnitude to sound speed, and calculates sound speed from the above equation directly. Things that *could* affect mach numbers going crazy (near simple_magpinch_animation2 frame 159 - 161):
+  - fluid speed
+  - sound speed
+    + very large pressure (upon closer inspection, along the center line, the pressure actually approaches 0 - for demonstration purposes look at the gas or athena_pp field data for pressure to see along the edges of the collision region (y=0), the pressure goes to 0 in the cell NEXT to the center two cells. This does not explain the high mach numbers, but it is concerning and interesting.)
+      - high number density (not sure how to check because athena uses mass density, but this is also stable)
+      - high temperature
+    + very small density (not the case - density plots seem stable and reasonable, but there is a SHARP increase near the edges)
+
+## June 6
+
+TODO Sign up for Z fundamental workshop and ask for student funding for travel support
 
 ## Updates as of June 4
 
