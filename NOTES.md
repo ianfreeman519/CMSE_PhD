@@ -1,9 +1,103 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## Up to July 15
+
+4 step program to salvation:
+1. Redownload Athena++ from a fork of the repository
+  - This gives version control, make sure to track everything
+  - Verify installation with a quick simulation
+2. Run Magnetized Noh problem 2D again
+  - Revisit original paper
+  - Verify early times in default
+  - Copy it as `magnoh2_copy.cpp` and run it again. Verify changing input files works
+  - Commit to repo
+3. Modify input file (NOT PROBLEM GENERATOR)
+  - First, modify it slightly, to verify it still works
+  - Modify it to make it more extreme (higher velocity, more intense density distribution, etc.)
+  - Commit and make notes to everything
+4. Convert it to the pinch problem I have been working on
+  - Start with very small changes, verifying everything works as expected
+  - Start with small $\alpha$ and $\beta$ terms in the input files (<<1)
+  - Build up to original problem from there
+  - Commit after every change
+
+I am still waiting on a so-called fix from the Couch group for FLASH compilation, but in the meantime I reinstalled Anaconda (in the hopes that it would fix the mpi4py problems -- it did not...), and started work on simplifying the athena problem. 
+
+Running on different spatial scales seems to have different effects on the behavior. For example, here is a 16x16 meshblock grid with 128x128 cells in each meshblock over time (YT won't plot t=0 case...) at time steps 1, 10, 100, 1000:
+
+<img src="athena_files/128_x_128_test1_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/128_x_128_test1_press_10.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/128_x_128_test1_press_100.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/128_x_128_test1_press_1000.png" alth="grid_size_discrepancy" width="400"/>
+
+Here is a 16x16 meshblock grid with 64x64 cells in each meshblock at timesteps 0, 1, 10:
+
+<img src="athena_files/64_x_64_test2_press_0.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/64_x_64_test2_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/64_x_64_test2_press_10.png" alth="grid_size_discrepancy" width="400"/>
+
+And finally a 16x16 meshblock grid with 32x32 cells in each in timesteps 0, 1, 10:
+
+<img src="athena_files/32_x_32_test3_press_0.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/32_x_32_test3_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/32_x_32_test3_press_10.png" alth="grid_size_discrepancy" width="400"/>
+
+
+## Up to July 10
+Things to try to fix flash:
+
+- check other makefiles from other clusters to compare and see if they work better (they did not)
+- ask for help from:
+  + astro (Sean)
+  + Steve Fromm
+  + Brandon Barker
+  + (I reached out to Brandon, and TBD)
+- look into docker
+
+Start of ACCESS proposal:
+
+Accurate and efficient models of plasma experiments are crucial to understanding the viability and efficacy of fusion devices and experiments. One such experiment, the plasma focus, involves symmetrically pinching a plasma into a small region, producing significant amounts of x-rays and neutrons. Within the pinch, the plasma can be modeled using the magnetohydrodynamic (MHD) equations. While originally intended for use in astrophysical scenarios, the AthenaPK (citation and spelling needed / check) software is capable of accurately and efficiently modeling such systems. 
+
+The physics within the plasma focus pinch is similar to other plasma experiments like the Z pinch (citation needed), or even indirect laser drives (citation needed), all of which are rich sources of neutrons and x-rays. The cylindrical symmetry of plasma focus devices, however, allows for a drastic reduction in computational costs of simulations. 2D simulations of a slice of the plasma focus suffice to extract rich physics from the simulations. 
+
+Another experiment with similar properties to the plasma pulse is the magnetic reconnection on Z (MARZ) experiments. In MARZ experiments, a large current pulse is driven through an exploding wire array which produces a radiatively cooled plasma and is a ripe testing ground for magnetic reconnection. MARZ experiments are unique because they are well modeled by MHD simulation packages, but exhibit features usually present in the kinetic (low density, fast timescale) limits (citation needed). As the name implies, MARZ experimentes are rich computational testing grounds for magnetic reconnection, which is an important phenomenon to understand for fusion experiments.
+
+The N main phenomena we intend to explore:
+- The magnetic reconnection environment, and the efficacy of non-ideal MHD modeling, as it relates to the MARZ experiments.
+- The internal energy densities, and the efficacty of non-ideal MHD modeling in the plasma focus.
+- thing N
+
+Computational time varies beased on what specific experiment we are modeling.
+
+### notes to fix proposal
+
+We are essentially trying to recreate the gorgon Datta paper, but create a more robust, faster code for simulating magnetic reconnection events using AthenaPK. 
+
+## Up to July 1
+- I went to Ann Arbor for HEDSS
+- TDO fill out reimbursement form
+- Still trying to fix the animation script - for some reason now module command is not found?
+- HPCC has been very strange since I came back from A2, and I have spent most of Wed-Friday of last trying to get it to cooperate
+- That said, I did read, then reread, then reread again the Drake section on magnetic reconnection and it is starting to make some sense to me but I have a few (basic) questions:
+  + All of the animations and simulations I have seen for reconnection are 2D, and the cross product of B-field and velocity flow is into/out of the page, which doesn't make sense to me. Why would Ions deflect perpendicular away from the reconnection region (fig 10.8 of Drake) in the page plane, and not into or out of the page?
+  + Reconnection just seems to happen, but I have an itch for an answer that is more robust: how? How do the magnetic field lines reorganize themselves? For a brief moment, wouldn't $\nabla\cdot\textbf{B}\neq 0$ at the center of the reconnection region? Or would the two opposing magnetic field regions instantaneously communicate between one another? 
+  + The reconnection rate seems to be how frequent it happens, and with units of velocity...
+
+For the ACCESS grant, I think I want to do some PIC animations and cross-reference them with MHD simulations. Everyone in HEDSS talked a lot about PIC, and not a lot about MHD, so I'm wondering if that is a skill I should pick up this summer too. An idea I've been mulling over for a paper \/\/\/ is below and I don't know where to start for that either.
+
+I really want to be working on a concept for a paper soon, but I'm not super sure where to start. I'm mulling over an idea for PIC where the number of super-particles can multiply or divide, kind of like an adaptive mesh refinement, depending on the region they enter or leave. High density regions don't need _more_ super particles, they need a sufficient number of representative particles to capture macroscopic behavior, while low density regions can be inaccurate if there aren't enough particles. So **maybe** there is a middle ground of, when a particle enters a 'low' density region without enough particles, it splits into two smaller superparticles. Coversely, when a particle enters a 'dense' region with too many particles, it merges with the particle to speed up the code.
+
+## June 17
+I've done some things: To recap from last week's tdo list here is what I have left:
+- Fill out a pre-approval trip form for ZFS
+- Register for the Z-fundamental science on account number RC114586 (charmNET DOE number)
+- After I get back, make sure to pull DOE funding first, then CharmNET will pay for rest.
+- Think about what simulations i wanna run for the next year and how long/how much they will cost
+
 ## June 8/10
 
-### TODO
+### TDO
 - Fill out a pre-approval trip form for both HEDSS and ZFS
 - Register for the Z-fundamental science on account number RC114586 (charmNET DOE number)
 - After I get back, make sure to pull DOE funding first, then CharmNET will pay for rest.
@@ -23,7 +117,7 @@ To track changes made in certain scripts and codes
     - currently set to HLLE
 - [FLASH docs might be helpful](https://flash.rochester.edu/site/flashcode/user_support/flash4_ug_4p8/node192.html#SECTION010124000000000000000) 
 
-I reformatted the movies!!! But I also learned my resolution was **TODO** high because you can't actually make out the center regions in the multi-plot animations. I need to rerun the simulations with a lower resolution (probably half) so you can make out the details in the center interesting region (see below). For reference in the future, here is the command which did it:
+I reformatted the movies!!! But I also learned my resolution was **TOO** high because you can't actually make out the center regions in the multi-plot animations. I need to rerun the simulations with a lower resolution (probably half) so you can make out the details in the center interesting region (see below). For reference in the future, here is the command which did it:
 
 `ffmpeg -i simulation_animation.mp4 -vf "crop=in_w*8/10:in_h*5/10:in_w/10:in_h*30/100" -c:a copy cropped_animation.mp4`
 
@@ -52,7 +146,7 @@ YT Calculates the `('gas', 'mach_number')` parameter from a ratio of velocity ma
 
 ## June 6
 
-TODO Sign up for Z fundamental workshop and ask for student funding for travel support
+TDO Sign up for Z fundamental workshop and ask for student funding for travel support
 
 ## Updates as of June 4
 
@@ -146,7 +240,7 @@ I got sick... But I read some papers and wrote the magpinchsimple problem genera
         phydro->u(IM2,k,j,i) = 0.0;         // Momentum in x2
         phydro->u(IM3,k,j,i) = 0.0;         // Momentum in x3
         phydro->u(IEN,k,j,i) = P/gm1 + 0.5*rho*SQR(vin); // Total energy
-        debug_tester = P/gm1 + 0.5*rho*SQR(vin); // TODO REMOVE
+        debug_tester = P/gm1 + 0.5*rho*SQR(vin); // TDO REMOVE
       }
     }
   }
@@ -457,7 +551,7 @@ When I run the debugger, I put breakpoints all throughout the OutflowInnerX1() m
 ## 04/01/24 - Investigating Boundary Value Problems
 I FOUND IT. There was a folder called `src/bvals` which has all the code that runs the boundary value problems... How elegant. The specific outflow file is in `src/bvals/cc/outflow_cc.cpp` which is only 137 lines long...
 
-TODO I just thought of this as I was skimming through the Athena++ methods paper... There is a chance that this issue could come from the fact that I have set up a situation where in the center the divergence of the magnetic field is infinite at the center slice. I don't anticipate this being an issue because Athena++ solves iteratively, but maybe (?)...
+TDO I just thought of this as I was skimming through the Athena++ methods paper... There is a chance that this issue could come from the fact that I have set up a situation where in the center the divergence of the magnetic field is infinite at the center slice. I don't anticipate this being an issue because Athena++ solves iteratively, but maybe (?)...
 
 
 

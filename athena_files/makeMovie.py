@@ -34,19 +34,19 @@ for index in range(len(files)):  # Ensure to loop over available datasets
         ('athena_pp', 'vel2'), ('gas', 'magnetic_field_y'), ('gas', 'density'), ('gas', 'specific_thermal_energy'),
         ('athena_pp', 'vel3'), ('gas', 'magnetic_field_z'), ('gas', 'magnetic_field_strength'), ('gas', 'magnetic_pressure')
     ]
-    
+
     # Create a SlicePlot
     p = yt.SlicePlot(ds, "z", fields)
-    
+
     # Export to a Matplotlib figure
     fig = p.export_to_mpl_figure((3, 4))
     fig.set_size_inches((16, 12))  # Resize the figure
-    fig.suptitle("Timestep " + str(index))
-    
+    fig.suptitle(f"Timestep {str(index)}")
+
     # Adjust the layout
     fig.tight_layout(rect=[0, 0, 1, 1.0])  # Adjust rect to prevent overlap with suptitle
     fig.subplots_adjust(wspace=0.05, hspace=0.01)  # Set small values for minimal spacing
-    
+
     # Iterate over each axis in the figure to modify the colorbar labels
     for ax, field in zip(fig.axes, fields):
         if hasattr(ax, 'images') and ax.images:
@@ -57,7 +57,7 @@ for index in range(len(files)):  # Ensure to loop over available datasets
                 cbar.ax.tick_params(labelsize=8)
                 # Set the custom label for the colorbar
                 cbar.set_label(field[1], fontsize=14)
-    
+
     # Save the figure to a buffer with increased DPI
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=200)  # Increase DPI
@@ -66,7 +66,7 @@ for index in range(len(files)):  # Ensure to loop over available datasets
     buf.close()
     plt.close(fig)  # Close the figure to avoid displaying it
     times[index] = time.time() - time0
-    
+
 # Create an animation from frames
 fig, ax = plt.subplots()
 def update(frame):
