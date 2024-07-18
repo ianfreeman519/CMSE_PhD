@@ -30,8 +30,8 @@ To track changes made in certain scripts and codes
       - <img src="athena_files/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_7.png" alth="grid_size_discrepancy" width="400"/>
     + Toned down the change: vr=-1e7 (just half of the original speed...)
       - <img src="athena_files/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_100.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_102.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
   - Commit and make notes to everything
 4. Convert it to the pinch problem I have been working on
   - Start with very small changes, verifying everything works as expected
