@@ -7,14 +7,27 @@ To track changes made in certain scripts and codes
 1. Redownload Athena++ from a fork of the repository
   - This gives version control, make sure to track everything
   - Verify installation with a quick simulation
+  - **DONE**
 2. Run Magnetized Noh problem 2D again
   - Revisit original paper
   - Verify early times in default
-  - Copy it as `magnoh2_copy.cpp` and run it again. Verify changing input files works
+    + **DONE** - had to modify output frequency to plot, but changed nothing else about input file
+  - Copy it as `magnoh_copy.cpp` and run it again. Verify changing input files works
   - Commit to repo
+    + **DONE** No problem so far.
 3. Modify input file (NOT PROBLEM GENERATOR)
   - First, modify it slightly, to verify it still works
   - Modify it to make it more extreme (higher velocity, more intense density distribution, etc.)
+    + Changed mesh block size and CFL number (m1-m3), and no obvious problems appeared
+    + Changed Bz=0 (m4) and notice small points of zero pressure preceeding the shock (see m4 frame 50, 51, 52)
+      - <img src="athena_files/m4_50.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m4_51.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m4_52.png" alth="grid_size_discrepancy" width="400"/>
+    + Changed vr=-2e4 (3 oom smaller) and huge regions of discontinuity in the pressure appears, but disappears a few timesteps later.
+      - <img src="athena_files/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_1.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_2.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/m6_3.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_7.png" alth="grid_size_discrepancy" width="400"/>
+    + Toned down the change: vr=-1e7 (just half of the original speed...)
+      - <img src="athena_files/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_100.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m8_102.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
   - Commit and make notes to everything
 4. Convert it to the pinch problem I have been working on
   - Start with very small changes, verifying everything works as expected
