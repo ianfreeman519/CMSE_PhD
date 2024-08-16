@@ -101,6 +101,7 @@ I have not completed the path to success yet, because finding the problem appear
   - Modify it to make it more extreme (higher velocity, more intense density distribution, etc.)
     + Changed mesh block size and CFL number (m1-m3), and no obvious problems appeared
     + Changed Bz=0 (m4) and notice small points of zero pressure preceeding the shock (see m4 frame 50, 51, 52)
+<<<<<<< HEAD
       - <img src="athena_files/figures/m4_50.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m4_51.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m4_52.png" alth="grid_size_discrepancy" width="400"/>
     + Changed vr=-2e4 (3 oom smaller) and huge regions of discontinuity in the pressure appears, but disappears a few timesteps later.
       - <img src="athena_files/figures/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_1.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_2.png" alth="grid_size_discrepancy" width="400"/> 
@@ -109,6 +110,20 @@ I have not completed the path to success yet, because finding the problem appear
     + Toned down the change: vr=-1e7 (just half of the original speed...)
       - <img src="athena_files/figures/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_100.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_101.png" alth="grid_size_discrepancy" width="400"/>
       - <img src="athena_files/figures/m8_102.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_104.png" alth="grid_size_discrepancy" width="400"/>
+=======
+      - <img src="athena_files/m4_50.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m4_51.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m4_52.png" alth="grid_size_discrepancy" width="400"/>
+    + Changed vr=-2e4 (3 oom smaller) and huge regions of discontinuity in the pressure appears, but disappears a few timesteps later.
+      - <img src="athena_files/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_1.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m6_2.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_3.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_7.png" alth="grid_size_discrepancy" width="400"/>
+    + Toned down the change: vr=-1e7 (just half of the original speed...)
+      - <img src="athena_files/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_100.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_102.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
+>>>>>>> 7607ad1c2cb5d89924bddd298b19f8edfdd62ac6
   - Commit and make notes to everything
 4. Convert it to the pinch problem I have been working on
   - Start with very small changes, verifying everything works as expected
