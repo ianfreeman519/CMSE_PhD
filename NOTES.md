@@ -1,6 +1,87 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## 08/16
+Moved a bunch of files in athena_files directory to athena_files/figures to clean up this space
+Made a new script called plot3dmin.py
+
+## 08/14
+I wrote an 'input_generator.py' in CMSE_PhD which generates a bunch of input files that span the following alpha, beta, pcoeff, d and b values (see below for scaling):
+```python
+alpha_values = [0, 1, 3, 5, 7]
+beta_values = [0, 1, 2, 3, 5]
+pcoeff_values = [1e-8, 1e-7, 1e-6]
+d_values = [1.218085e-5, 1.218085e-4, 1.218085e-3]
+b_values = [5e4, 5e5, 5e6] 
+```
+
+The files are in $SCRATCH/roe_pspace1 with inputs athinput.al#-be#-p#-d#-b# and al#-be#-p#-d#-b#.out2.#####.athdf where # is replaced with indices of the above arrays. This was just to make the exploration a little easier
+
+## 08/12
+Try Roe and lHHLD solver
+
+Roe is fast, and lhhld is slow, but I don't see noticable effects of choosing one over the other. I'm going to go with roe for the sampling of phase space. The following scaling as a function of radius is how the initial conditions are set up:
+
+$$ B = \frac{\text{bhpi or bz}}{\beta-1}*r^{\beta+1} $$
+$$ \rho = \text{d} r^{\alpha} $$
+$$ P = 4\pi \text{pcoeff}  * r^{2 \beta} (\text{bz}^2 + \text{bphi}^2)$$
+$$ u = \rho * \text{vr} x/r$$
+
+By default, $\alpha=5$, $\beta=3$, pcoeff $=10^{-7}$, $vr=-2\times 10^7$, $bphi=bz=5\times 10^5$, $d=1.2\times 10^{-4}$.
+
+I want to span each of the exponents from roughly 0 to twice their current value, with about 6 points in between. I want to span each of the coefficients by orders of magnitude with 3 points in between.
+
+$$ \alpha \in (0,10) \times 6 $$ 
+$$ \beta \in (0, 6)  \times 6 $$ 
+$$ p \in (p/10, 10p) \times 3 $$ 
+$$ d \in (d/10, 10d) \times 3 $$ 
+$$ b \in (b/10, 10b) \times 3 $$ 
+
+$3\times3\times3\times6\times6=972$ simultations... 
+
+## 07/30 - Trying to get Athena++ to stabilize its pressure fields
+
+TODO see if averaging out neighboring cells if below a pressure floor rather than set the pressure/energy to the floor - in src/eos/general/general_eos.cpp? Try getting flash compiled again.
+
+
+## ACCESS Grant Writing 07/29
+
+Accurate and efficient models of plasma experiments are crucial to understanding the viability and efficacy of fusion devices and experiments. One such experiment, the plasma focus, involves symmetrically pinching a plasma into a small region, producing significant amounts of x-rays and neutrons. Within the pinch, the plasma can be modeled using the magnetohydrodynamic (MHD) equations. While originally intended for use in astrophysical scenarios, the publically available Athena++ (Done citation and spelling needed / check) software package has shown promise in simulating these systems (Done Giuliani 2012). Most simulations of these experiments are wholly symmetric, or rely on symmetric perturbations to the pinches which do not closely mirror the laboratory experiments. When nonsymmetric flows are present, magnetic reconnection (semi-spontaneous reconfiguration of the magnetic field geometry) can occur. While some fluid codes written for CPUs--namely GORGON (Done citation needed, cannot find)--have been able to successfully simulate and model laboratory reconnection experiments like the Magnetic Reconnection on Z (MARZ) experiments (Done Datta 2024), publically available simulation codes like Athena++ or the newer, GPU based code AthenaPK have been used to recreate this success.
+
+Ideally, we would like to capture the particle effect of magnetic reconnection as it relates to laboratory fusion experiments in a fluid code. Athena++ and AthenaPK use non-ideal MHD, where the diffusion of fields is captured using a diffusive term, depending on the ohmic resistivity of the plasma. While sufficient to simulate reconnection, further investigation and comparison to laboratory experiments is needed to determine the accuracy of these reconnection effects. Depending on the current efficacy of the resistive MHD implementation to resolve reconnection, more accurate simulations of MARZ will be conducted. ... Done there is more to say here, ask Brian, maybe mention the symmetry of the problem?
+
+The N main phenomena we intend to explore:
+- The magnetic reconnection environment, and the efficacy of non-ideal MHD modeling, as it relates to the MARZ experiments.
+- The internal energy densities, and the efficacty of non-ideal MHD modeling in the plasma focus.
+
+Computation time estimates:
+- Around 100 (Done motivate why) 2D CPU simulations of the MARZ setup, with a 1000x1000 grid, out to probably 1000 timesteps (roughly 10,000 CPU hours, with 2GB on each core, 10TB of hard drive space)
+- Around 100 (Done motivate why) 2D GPU simulations of the MARZ setup, with a 2000x2000 grid, out to probably 1000 timesteps (roughly 15,000 GPU hours, Done how much RAM for GPU?, 40TB of hard drive space)
+- Around 50 2D (Done motivate why) Plasma Focus simulations with nonsymmetrical flow, with a 2000x2000 grid for about 1000x timesteps (roughly 8,0000 GPU hours, Done RAM?, 20TB of storage)
+
+Make sure that it compiles, and make sure the citations are in there.
+
+We believe that radiative cooling and resitivity are important for reconnection rate, and we intend to explore parameter space ..._ ___ 
+
+There are microphysical effects of weakly collisional plasmas and their compositions have dramatic effect on the reconnection rate and resistivity which we would like to capture in fluid codes. 2009 schekochihin
+
+## Updates to the path to success 07/24
+
+Ben suggested increasing pressure to drive down the initial Mach number, because the internal energy is not evolved separately. Additionally I could reduce the CFL number or order of spatial reconstruction to make the solver more diffusive.
+
+I have not completed the path to success yet, because finding the problem appeared sooner than I thought. Upon closer inspection of the 'out of the box' problem input files, the pressure fields act strangely at cycle steps close to 200. Along the horizontal/vertical lines and diagonals on the shock front, the pressure has a habit of jumping to machine epsilon, then climbing back up to become smooth again with its neighbors a few timesteps later. This does not happen in any of the other fields, just in the pressure. Plots of the energy reservoirs over time are shown below.
+
+<img src="athena_files/figures/ratio_mv_195.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_196.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_197.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_198.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_199.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_200.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_201.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_202.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_203.png" alth="default_problem_energy_ratios" width="400"/>
+<img src="athena_files/figures/ratio_mv_204.png" alth="default_problem_energy_ratios" width="400"/>
+
 ## Up to July 15
 
 4 step program to salvation:
@@ -20,14 +101,14 @@ To track changes made in certain scripts and codes
   - Modify it to make it more extreme (higher velocity, more intense density distribution, etc.)
     + Changed mesh block size and CFL number (m1-m3), and no obvious problems appeared
     + Changed Bz=0 (m4) and notice small points of zero pressure preceeding the shock (see m4 frame 50, 51, 52)
-      - <img src="athena_files/m4_50.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m4_51.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m4_52.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m4_50.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m4_51.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m4_52.png" alth="grid_size_discrepancy" width="400"/>
     + Changed vr=-2e4 (3 oom smaller) and huge regions of discontinuity in the pressure appears, but disappears a few timesteps later.
-      - <img src="athena_files/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_1.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_2.png" alth="grid_size_discrepancy" width="400"/> 
-      - <img src="athena_files/m6_3.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
-      - <img src="athena_files/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_7.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_1.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_2.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/figures/m6_3.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/figures/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_7.png" alth="grid_size_discrepancy" width="400"/>
     + Toned down the change: vr=-1e7 (just half of the original speed...)
-      - <img src="athena_files/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_100.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m8_102.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_100.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_101.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m8_102.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_104.png" alth="grid_size_discrepancy" width="400"/>
   - Commit and make notes to everything
 4. Convert it to the pinch problem I have been working on
   - Start with very small changes, verifying everything works as expected
@@ -39,22 +120,22 @@ I am still waiting on a so-called fix from the Couch group for FLASH compilation
 
 Running on different spatial scales seems to have different effects on the behavior. For example, here is a 16x16 meshblock grid with 128x128 cells in each meshblock over time (YT won't plot t=0 case...) at time steps 1, 10, 100, 1000:
 
-<img src="athena_files/128_x_128_test1_press_1.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/128_x_128_test1_press_10.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/128_x_128_test1_press_100.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/128_x_128_test1_press_1000.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/128_x_128_test1_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/128_x_128_test1_press_10.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/128_x_128_test1_press_100.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/128_x_128_test1_press_1000.png" alth="grid_size_discrepancy" width="400"/>
 
 Here is a 16x16 meshblock grid with 64x64 cells in each meshblock at timesteps 0, 1, 10:
 
-<img src="athena_files/64_x_64_test2_press_0.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/64_x_64_test2_press_1.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/64_x_64_test2_press_10.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/64_x_64_test2_press_0.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/64_x_64_test2_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/64_x_64_test2_press_10.png" alth="grid_size_discrepancy" width="400"/>
 
 And finally a 16x16 meshblock grid with 32x32 cells in each in timesteps 0, 1, 10:
 
-<img src="athena_files/32_x_32_test3_press_0.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/32_x_32_test3_press_1.png" alth="grid_size_discrepancy" width="400"/>
-<img src="athena_files/32_x_32_test3_press_10.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/32_x_32_test3_press_0.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/32_x_32_test3_press_1.png" alth="grid_size_discrepancy" width="400"/>
+<img src="athena_files/figures/32_x_32_test3_press_10.png" alth="grid_size_discrepancy" width="400"/>
 
 
 ## Up to July 10
@@ -177,11 +258,11 @@ $$vx = 1.4\times 10^7 \text{tanh}(Lx/'smoothness')(1+\frac{1}{2}cos(\frac{2N\pi 
 
 I'm not super confident the $P/(\gamma-1)$ makes sense physically, and I'm also concerned about the density being zero near the origin, but the simulation outputs look really promising (**each timestep is 0.1ns**):
 
-<img src="athena_files/magpinchrealistic_reconnection_event_0.png" alth="reconnection_ICs" width="400"/>
+<img src="athena_files/figures/magpinchrealistic_reconnection_event_0.png" alth="reconnection_ICs" width="400"/>
 
-<img src="athena_files/magpinchrealistic_reconnection_event_100.png" alth="reconnection_midstep" width="400"/>
+<img src="athena_files/figures/magpinchrealistic_reconnection_event_100.png" alth="reconnection_midstep" width="400"/>
 
-<img src="athena_files/magpinchrealistic_reconnection_event_400.png" alth="reconnection_midstep" width="400"/>
+<img src="athena_files/figures/magpinchrealistic_reconnection_event_400.png" alth="reconnection_midstep" width="400"/>
 
 ## May 30 2024
 
@@ -272,8 +353,8 @@ I got sick... But I read some papers and wrote the magpinchsimple problem genera
 
 Unfortunately, I'm getting weird zeros (?) all over the place in a region close to the origin. Here is the initial conditions at t=0 (when using std::cos() on left and std::sin() on right):
 
-<img src="athena_files/magpinchsimple_test_funky_pressure_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
-<img src="athena_files/magpinchsimple_test_funky_pressure_sin_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
+<img src="athena_files/figures/magpinchsimple_test_funky_pressure_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
+<img src="athena_files/figures/magpinchsimple_test_funky_pressure_sin_may_16.png" alth="unfixed_simple_magpinch" width="400"/>
 
 Things to try:
 - try setting athinput.magpinchsimple $\beta=1$
@@ -299,7 +380,7 @@ $$B_y=btanh(x/ 2\Delta x)$$
 Then make velocity to be on order equivalent to Magnetic Field, and thermal pressure ($v^2~B^2~P_th$), and set density and thermal pressure to be constant.
 
 ## Comprehensive list of everything attempted as of May 1 2024
-The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful, and can be seen at athena_files/zpinch5_density_Bfield.mp4. To get closer to the MARZ experiment, we added a slight perturbation in the radial direction, and set the resistivity (eta_ohm) in the athinput file to be nonzero to trigger magnetic reconnection. In the complicated simulation, we got this to work, and can be seen in athena_files/zpinchCP3_density_velocity.mp4.
+The original goal was to simulate the z-pinch to give me a grasp of how Athena++ works. This, initially, was successful, and can be seen at athena_files/figures/zpinch5_density_Bfield.mp4. To get closer to the MARZ experiment, we added a slight perturbation in the radial direction, and set the resistivity (eta_ohm) in the athinput file to be nonzero to trigger magnetic reconnection. In the complicated simulation, we got this to work, and can be seen in athena_files/figures/zpinchCP3_density_velocity.mp4.
 
 We then wanted to isolate the magnetic reconnection bit, so we decided to 'flatten out' the radial component, and make an inflow along the x-direction, strongest at $y=0$, and put opposing B-fields in the $x>0$ and $x\leq0$ regions. The full initial conditions set up is as follows:
 
@@ -446,7 +527,7 @@ So the new and improved problem generator magnetic field loops, which are closel
 
 But very problematically, the top edges (or maybe bottom?) of the simulation cells are/were not being filled in properly, but they are still nonzero? We haven't quite figured out what is happening here. Below is the colorplot with the annotated magnetic fields (black arrows) and the y-direction magnetic field strength using the above magnetic field loops.
 
-<img src="athena_files/magnetic_field_y_three_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
+<img src="athena_files/figures/magnetic_field_y_three_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
 
 This for loop structure is actually what I/we have returned to, because the other things we have tried have not yielded good results. Regardless, Brian suggested I try filling in all the values deep into the ghost zones of everything, to give me total control over whats happening. Unfortunately, this does not work either. Here is the loop I tried to do for that:
 
@@ -492,7 +573,7 @@ This does not fill in the magnetic fields properly (all constant and 0), but I'm
 
 Regardless, this is the output of the initial conditions when generated with the 'full' magpinch case:
 
-<img src="athena_files/magnetic_field_y_one_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
+<img src="athena_files/figures/magnetic_field_y_one_looped_magpinch.png" alth="unfixed_magpinch" width="400"/>
 
 I have resorted back to the three-looped problem generator above, and intend on experimenting with different starting and ending indices. 
 
@@ -500,15 +581,15 @@ I have also been trying to train ChatGPT on Athena to help with debugging, and i
 
 Below is the initial magnetic field configuration, with color representing magnetic fields in the y-direction, and vectors representing the directionality of the magnetic field of the fully fixed problem generator:
 
-<img src="athena_files/magnetic_field_y_three_looped_fixed_magpinch.png" alth="fixed_magpinch" width="400"/>
+<img src="athena_files/figures/magnetic_field_y_three_looped_fixed_magpinch.png" alth="fixed_magpinch" width="400"/>
 
 Here are the initial pressure fields (left) of the initial conditions, and the pressure fields (right) after a single time-step:
 
-<img src="athena_files/pressure_three_looped_fixed_magpinch_0.png" alth="fixed_magpinch_pressure_0" width="400"/>     <img src="athena_files/pressure_three_looped_fixed_magpinch_1.png" alth="fixed_magpinch_pressure_1" width="400"/>
+<img src="athena_files/figures/pressure_three_looped_fixed_magpinch_0.png" alth="fixed_magpinch_pressure_0" width="400"/>     <img src="athena_files/figures/pressure_three_looped_fixed_magpinch_1.png" alth="fixed_magpinch_pressure_1" width="400"/>
 
 Observe that despite the apparent correctness of the initial conditions, the pressure field is still broken over time, drawing in unknown errors from the boundary along fast inflows. The actual directory with real outputs is `magpinch_fixed_may1` for this simulation. Below are some multiplots showing other details:
 
-<img src="athena_files/multiplot_three_looped_fixed_magpinch_0.png" alth="multiplot_magpinch_pressure_0" width="400"/>     <img src="athena_files/multiplot_three_looped_fixed_magpinch_1.png" alth="multiplot_magpinch_pressure_1" width="400"/>
+<img src="athena_files/figures/multiplot_three_looped_fixed_magpinch_0.png" alth="multiplot_magpinch_pressure_0" width="400"/>     <img src="athena_files/figures/multiplot_three_looped_fixed_magpinch_1.png" alth="multiplot_magpinch_pressure_1" width="400"/>
 
 ## 05/01/24
 I have attempted to fill in everything, but the velocity, pressure, and density fields break when the indices are filled in with the following loop:
@@ -555,7 +636,7 @@ I reordered the way magnetic fields are set again within the problem generator i
 
  Below are the outputs of this problem generator, with $B_0$ set to 5e3, $v_{in}$ to 2e4. This fixed the sloppy initial conditions. More work needs to be done on completing the problem generator to fully describe all fields inside each meshblock. On **the left is t=0, on the right is t=1**. The files which generate this are in the aptly named `new_pgen_magpinch` file in the scratch directory.
 
-<img src="athena_files/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>
+<img src="athena_files/figures/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/figures/reordered_pgen_with_med_b_med_v_0.png" alth="unfixed_magpinch" width="400"/>
 
 
 ## 04/02/24 - Debugging time
@@ -625,7 +706,7 @@ To do list (completed)
 
 ## 03/21/24
 The issue is not, in fact, fixed. Turns out there are 3 dimensions in real life, and all three need fields defined. I added those definitions, but the temperature is still doing really weird things. This is an image from the standard inputs, with 128x128 cells, 16x16 blocks, B0=5e5, v0=2e7 (fixed_magpinch) (left), and the same setup with B=0 (right). These plots are both at the end of the simulation time.
-- <img src="athena_files/unfixed_pgen_1.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/unfixed_pgen_no_B_20.png" alth="unfixed_magpinch" width="400"/>
+- <img src="athena_files/figures/unfixed_pgen_1.png" alth="unfixed_magpinch" width="400"/>      <img src="athena_files/figures/unfixed_pgen_no_B_20.png" alth="unfixed_magpinch" width="400"/>
 
 The changes I made to the problem generator (I added two more nested for loops to account for the y- and z- direction B-field in each meshblock...):
 
@@ -652,7 +733,7 @@ For some reason, it looks like the bad values of pressure and temperature are co
 ## 03/20/24 - Fixed checkerboard issue
 Brian noticed a few days ago that it very well might be a face-centered field initialization problem in my problem generator. The face centered fields for some reason need to be set from i=1 to i=ie+1 and j=1 to j=je+1. I originally missed this when I made this problem generator.
 + This fixed the issue:
-    - <img src="athena_files/magpinch_new_pgen.png" alth="fixed_magpinch" width="600"/>
+    - <img src="athena_files/figures/magpinch_new_pgen.png" alth="fixed_magpinch" width="600"/>
 
 ## 03/18/24
 
@@ -662,10 +743,10 @@ Old to do list:
 + (done) Make a Research Notebook
 + Change the meshblocks of the Athena++ input file to be larger (than 4x4), because the ghost zones might be reaching too far into the neighboring blocks which might be causing the instabilities
     - I ran a 32x32 with 16x16 blocks and the issue persists (big_mesh_magpinch/):
-    - <img src="athena_files/magpinch_big_16x16block_0.png" alt="time0" width="400"/>        <img src="athena_files/magpinch_big_16x16block_1.png" alt="time1" width="400"/>
+    - <img src="athena_files/figures/magpinch_big_16x16block_0.png" alt="time0" width="400"/>        <img src="athena_files/figures/magpinch_big_16x16block_1.png" alt="time1" width="400"/>
 + Set the magnetic fields to 0, and see what if the instabilities and errors persist. This will probably tell us if it is an MHD problem or a hydro problem, or some combination of the two.
     - Using the 16x16 blocks, and the same problem generators as above, the errors change, and now they are no longer at the halo but in the center of the region, at the intersection of all of them? Makes me think the issue isn't with the halos... (no_B_magpinch)
-    - <img src="athena_files/magpinch_no_B_0.png" alt="time0" width="400"/>        <img src="athena_files/magpinch_no_B_1.png" alt="time1" width="400"/>
+    - <img src="athena_files/figures/magpinch_no_B_0.png" alt="time0" width="400"/>        <img src="athena_files/figures/magpinch_no_B_1.png" alt="time1" width="400"/>
     - On a whim, I tried it again with v=0, and it didn't change the above outputs (no_B_no_V_magpinch).
     - Trying again with $B=0$, $v\neq 0$, back to the small meshes (no_B_small_mesh_magpinch) gave no difference to the above output.
     
