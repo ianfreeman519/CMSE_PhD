@@ -10,7 +10,7 @@ b_values = [5e4, 5e5, 5e6]
 # Read the template file
 template = """<comment>
 problem = Z-pinch; Magnetized Noh with axial and azimuthal field
-configure = --prob=magnoh -b --flux=hlle -hdf5 -h5double
+configure = --prob=magnoh -b --flux=lhlle -hdf5 -h5double -omp
 reference = Authored by A. Beresnyak. Mag Noh "Problem 2" from:
 
 # "Self-similar solutions for the magnetized Noh problem with axial and azimuthal field",
@@ -40,15 +40,15 @@ xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
-nx1        = 300        # Number of zones in X1-direction
-x1min      = -3.0       # minimum value of X1
-x1max      =  3.0       # maximum value of X1
+nx1        = 400        # Number of zones in X1-direction
+x1min      = -2.0       # minimum value of X1
+x1max      =  2.0       # maximum value of X1
 ix1_bc     = outflow    # Inner-X1 boundary condition flag
 ox1_bc     = outflow    # Outer-X1 boundary condition flag
 
-nx2        = 300        # Number of zones in X2-direction
-x2min      = -3.0       # minimum value of X2
-x2max      =  3.0       # maximum value of X2
+nx2        = 400        # Number of zones in X2-direction
+x2min      = -2.0       # minimum value of X2
+x2max      =  2.0       # maximum value of X2
 ix2_bc     = outflow    # Inner-X2 boundary condition flag
 ox2_bc     = outflow    # Outer-X2 boundary condition flag
 
@@ -58,29 +58,9 @@ x3max      = 1.0        # maximum value of X3
 ix3_bc     = periodic   # Inner-X3 boundary condition flag
 ox3_bc     = periodic   # Outer-X3 boundary condition flag
 
-refinement = static
-
-<refinement1>
-x1min = -0.4
-x1max =  0.4
-x2min = -0.4
-x2max =  0.4
-x3min =  0.0
-x3max =  0.0
-level =  1
-
-<refinement2>
-x1min = -0.2
-x1max =  0.2
-x2min = -0.2
-x2max =  0.2
-x3min =  0.0
-x3max =  0.0
-level =  2
-
 <meshblock>
-nx1        = 100        # Number of zones in X1-direction
-nx2        = 100        # Number of zones in X2-direction
+nx1        = 400        # Number of zones in X1-direction
+nx2        = 400        # Number of zones in X2-direction
 nx3        = 1          # Number of zones in X3-direction
 
 <hydro>

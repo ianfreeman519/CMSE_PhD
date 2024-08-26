@@ -1,9 +1,41 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## 08/25 - Broken Smoothing Schemes
+
+New smoothing scheme doesn't work either.
+
+## 08/20 - New Smoothing Scheme
+
+My last smoothing scheme sucked. It was not monotonic which is problematic for this problem, and produced a ton of instabilites in the fields (see below). [This](https://www.desmos.com/calculator/rdb0bibnb8) is a new one that is continuous and smooth. At the end of the day I don't care what I "cutoff" to, I just care that the fields flatten out. I'm going to implement this and see what it fixes.
+
+<img src="athena_files/figures/cycle0_smooth_v1_1d-Profile_radius_pressure.png" alth="initial_pressure_in_smoothed_tanh" width="400"/>
+<img src="athena_files/figures/smooth_magnoh_pressure_profile_v1_1d-Profile_radius_pressure.png" alth="unstable_pressure_in_smoothed_tanh" width="400"/>
+
+This is the initial conditions, and just 20 time steps after the initial conditions. Is Bad.
+
+## 08/19
+
+Made smooth_magnoh.cpp to try to implement a [tanh damping term](https://www.desmos.com/calculator/g0bljxj00h).
+
+TODO ask Sean for letter of rec for GRFP
+
+TODO see if Devin has any suggestions for NSF GRFP / CSGF
+
+TODO preliminary website?
+
+TODO switch account for slurm stuff using #SBATCH -A galaxies
+
+TODO decide on office hours - can decide on fully virtual or not
+
+I discovered that almost none of the simulations stay stable except for the initial conditions. Initially I made the parameterspace with the roe solver, but it is actually comically bad. I must have made a mistake when I initially tested everything because every single analysis I did indicated the pressure was flooring out (which is was because Roe is not capable of solving this problem).
+
+I am re running the parameter space with the lhlle solver because I'm tired of dealing with unstable simulations.
+
 ## 08/16
-Moved a bunch of files in athena_files directory to athena_files/figures to clean up this space
-Made a new script called plot3dmin.py
+Moved a bunch of files in athena_files directory to athena_files/figures to clean up this repo
+
+Made a new script called plot3dmin.py to explore the 5d parameter space of simulations described below. The HPCC is moving very slow today.
 
 ## 08/14
 I wrote an 'input_generator.py' in CMSE_PhD which generates a bunch of input files that span the following alpha, beta, pcoeff, d and b values (see below for scaling):

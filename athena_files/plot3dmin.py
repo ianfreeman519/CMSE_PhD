@@ -1,5 +1,7 @@
 import yt
+yt.set_log_level(40) 
 import numpy as np
+import pickle
 
 def grabFileSeries(scratchdirectory, fn, f0=0, step=1, width=5, 
                    basename="MPsimple", scratchPath="/mnt/gs21/scratch/freem386/"):
@@ -24,31 +26,35 @@ def grabFileSeries(scratchdirectory, fn, f0=0, step=1, width=5,
             files.append(scratchPath + scratchdirectory + basename + ".out2." + str(f).zfill(width) + ".athdf")
     return files
 
-def grabAllData(filename):
-    """Returns a covering grid of filename at AMR level 0
-
-    Args:
-        filename (str): Full path of desired file
-
-    Returns:
-        yt.covering_grid: AMR level 0 covering grid of filename
-    """
-    ds = yt.load(filename)
-    max_level = ds.index.max_level      # Max AMR level - included for if AMR is turned on later
-    low = ds.domain_left_edge           # Domain left edge for numpy conversion starting region
-    dims = ds.domain_dimensions         # Dimensions of full domain
-    all_data_level_0 = ds.covering_grid(level=max_level, left_edge=low, dims=dims)
-    return all_data_level_0
 
 def main():
-    fileseries = grabFileSeries("roe_pspace1/", 300, basename="al0_be1_p1_d1_b1")
-    cGrid = grabAllData(fileseries[20])
-    pGrid = np.array(cGrid["gas", "pressure"])
+    sim_size = (400, 400)
+    full_pspace =  np.zeros((5, 5, 3, 3, 3, 300))
+    for i1 in range(5):
+        for i2 in range(5):
+            for i3 in range(3):
+                for i4 in range(3):
+                    for i5 in range(3):
+                        basename = f"al{i1}_be{i2}_p{i3}_d{i4}_b{i5}"
+                        fileseries = grabFileSeries("lhlld_pspace2/", 300, basename=basename)
+                        print(f"Working on {basename}")
+                        for i in range(300):
+                            print(i, end=" ")
+                            try:
+                                ds = yt.load(fileseries[i])
+                            except:
+                                break
+                            cGrid = ds.all_data()
+                            pGrid = np.array(cGrid["gas", "pressure"])
+                            pGrid = np.reshape(pGrid, sim_size)
+                            interior_pGrid = pGrid[150:250, 150:250]
+                            full_pspace[i1, i2, i3, i4, i5, i] = np.min(interior_pGrid)
+                            print(np.min(interior_pGrid))
+    
+    filename = "lhlld2_stability.pkl"
+    filewriter = open(filename, 'wb')   
+    pickle.dump(full_pspace, filewriter)
+    print("dumped to file")
+    filewriter.close()
 
-    print(np.any(pGrid < 1e-10))
-    
-    cGrid = grabAllData(fileseries[0])
-    pGrid = np.array(cGrid["gas", "pressure"])
-    print(np.any(pGrid < 1e-10))
-    
 main()
