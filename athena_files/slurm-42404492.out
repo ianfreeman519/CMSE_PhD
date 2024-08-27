@@ -1,2 +1,0 @@
-/mnt/home/freem386/anaconda3/envs/research/lib/python3.12/site-packages/yt/sample_data/api.py:149: UserWarning: Storage directory from yt config doesn't exist (currently set to '/does/not/exist'). Current working directory will be used instead.
-  warn(
