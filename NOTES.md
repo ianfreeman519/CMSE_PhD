@@ -18,15 +18,9 @@ This is the initial conditions, and just 20 time steps after the initial conditi
 
 Made smooth_magnoh.cpp to try to implement a [tanh damping term](https://www.desmos.com/calculator/g0bljxj00h).
 
-TODO ask Sean for letter of rec for GRFP
-
 TODO see if Devin has any suggestions for NSF GRFP / CSGF
 
-TODO preliminary website?
-
 TODO switch account for slurm stuff using #SBATCH -A galaxies
-
-TODO decide on office hours - can decide on fully virtual or not
 
 I discovered that almost none of the simulations stay stable except for the initial conditions. Initially I made the parameterspace with the roe solver, but it is actually comically bad. I must have made a mistake when I initially tested everything because every single analysis I did indicated the pressure was flooring out (which is was because Roe is not capable of solving this problem).
 
