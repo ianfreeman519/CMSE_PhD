@@ -1,6 +1,95 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## 01/09
+
+I have a lot to talk about, and I will sit down to chronicle it all out soon. But right now, I'm just going to include the pictures of the simulations I ran.
+
+<img src="athena_files/figures/rf2_0_1x_IC.png" alth="recon_freem2" width="800"/>
+
+<img src="athena_files/figures/rf2_0_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_100_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_200_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_300_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_400_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_500_10x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_500_50x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_800_50x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1200_50x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1500_50x_loop1.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1800_50x_loop1.png" alth="recon_freem2" width="800"/>
+
+<img src="athena_files/figures/rf2_0_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_100_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_200_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_300_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_400_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_500_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_600_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+Here, the flow at the top of the image is (sonic) Mach~10, and (alfven) Mach~0.5, with Ma<1 at the midplane and Ma>1 in the cells adjacent to the midplane
+<img src="athena_files/figures/rf2_700_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_800_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_900_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1000_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1200_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+Here, the flow at the midplane is supersonic and superalfvenic, but the inflow far from the midplane is subsonic but superalvfenic
+<img src="athena_files/figures/rf2_1300_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1400_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1500_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1600_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1700_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1800_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+<img src="athena_files/figures/rf2_1900_50x_Xpoint.png" alth="recon_freem2" width="800"/>
+
+
+## 12/02
+
+Welcome back it's been a minute. Since we have been gone, i've done some things. Gone to October DPP, and taken a lot of notes in my physical notebook, but not nearly as many in here. I transitioned because I was interested in figuring out the jump conditions across the shock (but never really got to the point of having a real concise conclusion from that...).
+
+Then I met with Kris Beckwith who mentioned a host of initial conditions I could try through the GEM framework, which led me to a few other discoveries and finally led to me trying to implement two new initial conditions in Athena++ (successfully, but with no real progress in the reconnection realm). After an email to Qi Tang, one of Brian's collaborators, I am going to try to implement yet another set of initial conditions to get reconnection to occur, which I am going to call `recon_bhat`. It has the following form:
+
+$$\textbf{B}=\nabla\psi(x,z)\times\hat{\textbf{y}}$$
+$$\psi=A0sin(2\pi x/L)sin(2\pi z/L)$$
+$$\implies \textbf{B}= -\frac{2 A0 \pi}{L}cos(\frac{2\pi z}{L})sin(\frac{2\pi x}{L})\hat{x}+\frac{2 A0 \pi}{L}cos(\frac{2\pi x}{L})sin(\frac{2\pi z}{L})\hat{z}$$
+
+$$A0=L/\sqrt{2}\pi$$
+$$L=\sqrt{2}$$
+$$p=6$$
+$$\rho=1$$
+$$T=3$$
+
+And this problem uses the following EOS/Lunquist number
+
+$$p=2\rho T$$
+$$S_{L}=6.28\times 10^5$$
+
+And as a reminder lundquist number is:
+
+$$S_L=\frac{B*L}{\eta\sqrt{4 \pi \rho}}$$
+
+Which allows us to arrive at an initial eta of:
+
+$$\eta=8.255e-8$$
+
+
+Set $\gamma=1.001$ < be realistic here, but you get the picture. To make process isothermal and keep EOS realistic.
+
+Read more into N. F. Loureiro, A. A. Schekochihin, and S. C. Cowley, Phys. Plasmas 14, 100703 2007.
+
+## 09/16
+
+DO FELLOWSHIPS
+also email caplan
+start a prelim lit search on Google Scholar - look for other ways of thinking about reconnection and radiatively cooled plasma shock simulations
+- abstract search feature
+see if i can share Zotero folder with oshea@msu.edu
+
+## 09/11 - Things have happened.
+
+I did a comprehensive study of all the possible (and semi-relevant) initial conditions of the pinch problem. Biggest discovery? It doesn't really stay stable. The pressure tries to go to 0, the solvers break, and then everyone goes home sad. We are moving on from that problem.
+
+Now we are thinking about the MARZ setup, specifically the radiative precursor idea where the reconnection sheet radiatively heats the plasma around it, affecting the dynamics of the system.
+
 ## 08/25 - Broken Smoothing Schemes
 
 New smoothing scheme doesn't work either.
@@ -137,18 +226,18 @@ I have not completed the path to success yet, because finding the problem appear
       - <img src="athena_files/figures/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_100.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_101.png" alth="grid_size_discrepancy" width="400"/>
       - <img src="athena_files/figures/m8_102.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_104.png" alth="grid_size_discrepancy" width="400"/>
 =======
-      - <img src="athena_files/m4_50.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m4_51.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m4_52.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m4_50.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m4_51.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m4_52.png" alth="grid_size_discrepancy" width="400"/>
     + Changed vr=-2e4 (3 oom smaller) and huge regions of discontinuity in the pressure appears, but disappears a few timesteps later.
-      - <img src="athena_files/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_1.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m6_2.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_3.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
-      - <img src="athena_files/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m6_7.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m6_0.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_1.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m6_2.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_3.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m6_4.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_5.png" alth="grid_size_discrepancy" width="400"/> 
+      - <img src="athena_files/figures/m6_6.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m6_7.png" alth="grid_size_discrepancy" width="400"/>
     + Toned down the change: vr=-1e7 (just half of the original speed...)
-      - <img src="athena_files/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_100.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m8_101.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_102.png" alth="grid_size_discrepancy" width="400"/>
-      - <img src="athena_files/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/m8_104.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m8_99.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_100.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m8_101.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_102.png" alth="grid_size_discrepancy" width="400"/>
+      - <img src="athena_files/figures/m8_103.png" alth="grid_size_discrepancy" width="400"/> <img src="athena_files/figures/m8_104.png" alth="grid_size_discrepancy" width="400"/>
 >>>>>>> 7607ad1c2cb5d89924bddd298b19f8edfdd62ac6
   - Commit and make notes to everything
 4. Convert it to the pinch problem I have been working on
@@ -322,8 +411,8 @@ The paper claims an ion density of around 6e18 cm$^-3$ which means I need to inp
 
 $$SL = Lv_A/\eta$$
 $$S_L= 10^3 = \frac{B*L}{\eta\sqrt{\mu0 \rho}}$$
-$$\longrarrow \eta = \frac{B*L}{1e3 \sqrt{\mu0 \rho}}$$
-$$\longrarrow \eta = \frac{4e4 * 0.6}{1e3 \sqrt{1 * 1.4e-6}}$$
+$$\implies \eta = \frac{B*L}{1e3 \sqrt{\mu0 \rho}}$$
+$$\implies \eta = \frac{4e4 * 0.6}{1e3 \sqrt{1 * 1.4e-6}}$$
 
 According to this calculation, the resistivity is 2e4...
 
