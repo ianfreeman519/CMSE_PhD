@@ -1,11 +1,68 @@
 import os
 import re
 import numpy as np
+import h5py
+
+def get_simulation_time(hdf5_file):
+    """
+    Extracts the simulation time from an Athena++ HDF5 output file.
+
+    Parameters:
+    ----------
+    hdf5_file : str
+        Path to the HDF5 file.
+
+    Returns:
+    -------
+    float or None
+        The simulation time if found, or None if the time is not available or an error occurs.
+    """
+    try:
+        with h5py.File(hdf5_file, 'r') as hdf:
+            # Check if the 'Time' attribute exists at the root
+            if 'Time' in hdf.attrs:
+                return hdf.attrs['Time']
+            else:
+                print(f"'Time' attribute not found at the root of the HDF5 file: {hdf5_file}.")
+    except Exception as e:
+        print(f"Error while reading HDF5 file '{hdf5_file}': {e}")
+    
+    return None
+
+
+def parse_input_file(filename):
+    # Initialize variables to None
+    P0 = None
+    rho0 = None
+    v0 = None
+    b0 = None
+    L = None
+    
+    # Open and read the file
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+    
+    # Look for the relevant lines
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line.startswith("P0"):
+            P0 = float(stripped_line.split('=')[1].strip())
+        elif stripped_line.startswith("rho0"):
+            rho0 = float(stripped_line.split('=')[1].strip())
+        elif stripped_line.startswith("v0"):
+            v0 = float(stripped_line.split('=')[1].strip())
+        elif stripped_line.startswith("b0") or stripped_line.startswith("d\t"):  # Match only if 'd' is followed by space or tab
+            b0 = float(stripped_line.split('=')[1].strip())
+        elif stripped_line.startswith("L"):
+            L = float(stripped_line.split('=')[1].strip())
+    
+    return P0, rho0, v0, b0, L
+
 
 def grabFileSeries(
     scratchdirectory,
     fn=None,
-    basename="out",
+    basename="output_name",
     f0=0,
     step=1,
     width=5,
