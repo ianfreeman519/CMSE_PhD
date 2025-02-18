@@ -3,6 +3,48 @@ import re
 import numpy as np
 import h5py
 
+def change_in_box(quantity, u, v, dx, dy, dz, dt):
+    """Calculate the integral of the flux through a bounding box in the x- and y- direction
+
+    Args:
+        quantity (numpy.ndarray): 2D quantity to calculate flux through (e.g. Energy)
+        vx (numpy.ndarray): 2D x-velocity in the box
+        vy (numpy.ndarray): 2D y-velocity in the box
+        dx (float): grid size in x-direction
+        dy (float): grid size in y-direction
+        dz (float): grid size in z-direction
+    """
+    # Left edge of the box:
+    vn = u[0,:]     # velocity normal to edge
+    Q = quantity[0,:]       # Quantity at edge
+    da = dy*dz      # da of edge
+    flux = np.sum(vn*Q*da)     # quantity change per time into edge
+    total_change_left = flux*dt     # total quantity *into* edge
+    
+    # Bottom edge of the box:
+    vn = v[:,0]     # velocity normal to edge
+    Q = quantity[:,0]       # Quantity at edge
+    da = dx*dz      # da of edge
+    flux = np.sum(vn*Q*da)     # quantity change per time into edge
+    total_change_bottom = flux*dt     # total quantity *into* edge
+    
+    # Top edge of the box:
+    vn = v[:,-1]     # velocity normal to edge
+    Q = quantity[:,-1]       # Quantity at edge
+    da = dx*dz      # da of edge
+    flux = np.sum(vn*Q*da)     # quantity change per time into edge
+    total_change_top = flux*dt     # total quantity *into* edge
+    
+    # Right edge of the box:
+    vn = u[-1,:]     # velocity normal to edge
+    Q = quantity[-1,:]       # Quantity at edge
+    da = dy*dz      # da of edge
+    flux = np.sum(vn*Q*da)     # quantity change per time into edge
+    total_change_right = flux*dt     # total quantity *into* edge
+    
+    return total_change_bottom + total_change_left + total_change_right + total_change_top
+
+
 def get_simulation_time(hdf5_file):
     """
     Extracts the simulation time from an Athena++ HDF5 output file.

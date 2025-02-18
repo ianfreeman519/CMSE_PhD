@@ -109,7 +109,7 @@ Collisional to Collisionless reconnection occurs when the layer thickness become
 
 $$\tau(d_{i})\approx 100(n_{e}r_{e}^3)^{1/2}$$
 
-Therefore unless density approaches $10^33 cm^{-3}$, reconnection layers on the brink of the collisional/collisionless transition is unavoidably optically thin to Thomson scattering. (**TODO I'm not sure what this means for the optically thick case. Does this mean that we need incredibly high density to reach optically thick conditions, or is this just considering the Thomson scattering?**)
+Therefore unless density approaches $10^{33} cm^{-3}$, reconnection layers on the brink of the collisional/collisionless transition is unavoidably optically thin to Thomson scattering. (**TODO I'm not sure what this means for the optically thick case. Does this mean that we need incredibly high density to reach optically thick conditions, or is this just considering the Thomson scattering? - $\tau_{cool}=\frac{E}{\dot{E}}$**)
 
 ### SP MR in strong-compression limit
 Consider a layer with half-length $L$ and half-thickness $\delta$. The direction across the layer is y. The inflow velocity is denoted $v_{rec}$ and outflow velocity is $u$. Subscript 0 means upstream of the layer (upstream magnetic field $B_{0}$, upstream density $n_{0}$, and upstrea temperature $T_{0}$) like the upstream Alfven velocity $$V_{A0}\equiv \frac{B_{0}}{\sqrt{4\pi n_{0}m_{p}}}$$
@@ -202,3 +202,21 @@ When Ohmic heating is precisely balanced by advective losses ($Q_{ohm}\approx Q_
 In general one can say that the reconnection process partly converts magnetic energy into kinetic energy to the outflow and generates heat (this is true in both non-radiative SP MR and optically thin radiative MR). However, the SP case both forms of plasma energy are taken out along the layer by the plasma outflow but in the strong radiative cooling case the kinetic part of the energy is still advected out but the thermal energy is lost due to radiation. If $A\gg 1$ the radiative loss is much larger than advective heat loss, so we have a form for $Q_{rad}$:
 $$Q_{rad}(n,T)=Q_{ohm}\approx AQ_{0}$$
 
+## [Plasmoid Formation and Strong Radiative Cooling in a Driven Magnetic Reconnection Experiment](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.132.155102) 
+
+First experimental study of plasmoid formation in a magnetic reconnection layer undergoing rapid radiative cooling. Here, $S_{L}\approx 120$ which is much lower than traditional models think about. The cooling rate far exceeds the hydrodyanmic transit rates by two orders of magnitude, and there is a burst of x-ray emission. 
+
+Here they have superalfvenic ($M_{A}\approx 7$) and supersonic ($M_{S}\approx 10) flows. 
+
+### Pivoting to the next paper because it makes more sense for me to think about now
+
+## [Simulations of radiatively cooled magnetic reconnection driven by pulsed power](https://www.cambridge.org/core/journals/journal-of-plasma-physics/article/simulations-of-radiatively-cooled-magnetic-reconnection-driven-by-pulsed-power/462C0963DA081CE2D6FA85F176BFBA53)
+
+Instead of me transcribing it word-for-word, here is the abstract:
+
+Magnetic reconnection is an important process in astrophysical environments, as it reconfigures magnetic field topology and converts magnetic energy into thermal and kinetic energy. In extreme astrophysical systems, such as black hole coronae and pulsar magnetospheres, radiative cooling modifies the energy partition by radiating away internal energy, which can lead to the radiative collapse of the reconnection layer. In this paper, we perform two- and three-dimensional simulations to model the MARZ (Magnetic Reconnection on Z) experiments, which are designed to access cooling rates in the laboratory necessary to investigate reconnection in a previously unexplored radiatively cooled regime. These simulations are performed in GORGON, an Eulerian two-temperature resistive magnetohydrodynamic code, which models the experimental geometry comprising two exploding wire arrays driven by 20 MA of current on the Z machine (Sandia National Laboratories). Radiative losses are implemented using non-local thermodynamic equilibrium tables computed using the atomic code Spk, and we probe the effects of radiation transport by implementing both a local radiation loss model and P1/3 multi-group radiation transport. The load produces highly collisional, super-Alfvénic (Alfvén Mach number MA ≈ 1.5), supersonic (Sonic Mach number MS ≈ 4 − 5) strongly driven plasma flows which generate an elongated reconnection layer (Aspect Ratio L/δ ≈ 100, Lundquist number SL ≈ 400). The reconnection layer undergoes radiative collapse when the radiative losses exceed the rates of ohmic and compressional heating (cooling rate/hydrodynamic transit rate = τ −1 cool/τ −1 H ≈ 100); this generates a cold strongly compressed current sheet, leading to an accelerated reconnection rate, consistent with theoretical predictions. Finally, the current sheet is also unstable to the plasmoid instability, but the magnetic islands are extinguished by strong radiative cooling before ejection from the layer.
+
+Section 1 is just a list of why radiative cooling and reconnection are related and important. They also include a ton of references that will be helpful in the future, but right now I'm really interested in section 2 and 3.
+
+### 2. Simulation Details
+They used GORGON, which is an Eulerian resistive-MHD code with van Leer advection (TODO figure out what this means). They use the MARZ setup, which is detailed in the "Plasmoid Formation and Strong Radiative Cooling..." paper just above this. The wire arrays have a center to center separation of 60mm, each array has a radius of 20mm and have 150 equally spaced 75$\mu$m diameter aluminum wires, 36mm tall each. **In the simulation, the aluminum wires are distributed over $3\times 3$ grid cells of pre-expanded wire cores. 

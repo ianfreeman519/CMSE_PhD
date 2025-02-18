@@ -1,6 +1,11 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## 02/06
+Oh boy I haven't updated this in a minute... I should do better.
+
+The simulation I talked about in January isn't doing reconnection in the way I thought it was. Looks like it's an instability which is producing eddies that look like reconnection sites but they actually arent. I ran a few higher res simulations (with static meshes in the center focused on the reconnection site), and they don't fall susceptible to the same thing as fast, because the fine structure of the layer is spread across a few dozen cells rather than just 2. When I zoomed in I learned that while reconnection isn't happening at the x-points like in the SP model, it _is_ still happening on the O points after the flow compresses the O points to a figure 8 shape.
+
 ## 01/09
 
 I have a lot to talk about, and I will sit down to chronicle it all out soon. But right now, I'm just going to include the pictures of the simulations I ran.
