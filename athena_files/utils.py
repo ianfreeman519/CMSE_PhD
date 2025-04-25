@@ -8,41 +8,59 @@ def change_in_box(quantity, u, v, dx, dy, dz, dt):
 
     Args:
         quantity (numpy.ndarray): 2D quantity to calculate flux through (e.g. Energy)
-        vx (numpy.ndarray): 2D x-velocity in the box
-        vy (numpy.ndarray): 2D y-velocity in the box
+        u (numpy.ndarray): 2D x-velocity in the box
+        v (numpy.ndarray): 2D y-velocity in the box
         dx (float): grid size in x-direction
         dy (float): grid size in y-direction
         dz (float): grid size in z-direction
+        dt (float): timestep
     """
     # Left edge of the box:
-    vn = u[0,:]     # velocity normal to edge
-    Q = quantity[0,:]       # Quantity at edge
-    da = dy*dz      # da of edge
+    vn1 = u[0,:]    # velocity normal to edge at edge cell
+    vn2 = u[0,:]    # velocity normal to edge next to edge
+    vn = (vn1 + vn2)/2      # Average (at cell face, one cell inside the box)
+    Q1 = quantity[0,:]      # Quantity at edge cell
+    Q2 = quantity[1,:]      # Quantity next to edge
+    Q = (Q1 + Q2)/2         # Average (at cell face, one cell inside the box)
+    da = dy*dz              # da of edge
     flux = np.sum(vn*Q*da)     # quantity change per time into edge
     total_change_left = flux*dt     # total quantity *into* edge
     
     # Bottom edge of the box:
-    vn = v[:,0]     # velocity normal to edge
-    Q = quantity[:,0]       # Quantity at edge
+    vn1 = v[:,0]    # velocity normal to edge at edge cell
+    vn2 = u[:,1]    # velocity normal to edge next to edge
+    vn = (vn1 + vn2)/2      # Average (at cell face, one cell inside the box)
+    Q1 = quantity[:,0]      # Quantity at edge cell
+    Q2 = quantity[:,1]      # Quantity next to edge
+    Q = (Q1 + Q2)/2         # Average (at cell face, one cell inside the box)
     da = dx*dz      # da of edge
     flux = np.sum(vn*Q*da)     # quantity change per time into edge
     total_change_bottom = flux*dt     # total quantity *into* edge
     
     # Top edge of the box:
-    vn = v[:,-1]     # velocity normal to edge
-    Q = quantity[:,-1]       # Quantity at edge
+    vn1 = v[:,-1]    # velocity normal to edge at edge cell
+    vn2 = v[:,-2]    # velocity normal to edge next to edge
+    vn = (vn1 + vn2)/2      # Average (at cell face, one cell inside the box)
+    Q1 = quantity[:,-1]      # Quantity at edge cell
+    Q2 = quantity[:,-2]      # Quantity next to edge
+    Q = (Q1 + Q2)/2         # Average (at cell face, one cell inside the box)
     da = dx*dz      # da of edge
     flux = np.sum(vn*Q*da)     # quantity change per time into edge
     total_change_top = flux*dt     # total quantity *into* edge
     
     # Right edge of the box:
-    vn = u[-1,:]     # velocity normal to edge
-    Q = quantity[-1,:]       # Quantity at edge
+    vn1 = u[-1,:]    # velocity normal to edge at edge cell
+    vn2 = u[-2,:]    # velocity normal to edge next to edge
+    vn = (vn1 + vn2)/2      # Average (at cell face, one cell inside the box)
+    Q1 = quantity[-1,:]      # Quantity at edge cell
+    Q2 = quantity[-2,:]      # Quantity next to edge
+    Q = (Q1 + Q2)/2         # Average (at cell face, one cell inside the box)
     da = dy*dz      # da of edge
     flux = np.sum(vn*Q*da)     # quantity change per time into edge
     total_change_right = flux*dt     # total quantity *into* edge
     
-    return total_change_bottom + total_change_left + total_change_right + total_change_top
+    # Notice the sign for the right and top edge, because those da point INTO the box, i.e. -x, -y at right and top
+    return total_change_bottom + total_change_left - total_change_right - total_change_top
 
 
 def get_simulation_time(hdf5_file):

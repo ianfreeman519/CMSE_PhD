@@ -1,6 +1,13 @@
 # Research "Notebook"
 To track changes made in certain scripts and codes
 
+## 03/17
+Spoiler alert... I did not do better.
+
+Recon_freem was cool and all, but the pressure was being initialized incorrectly. After a conversation with Ben Webking, I learned two things: Athena++ wants the *total* internal energy initialized, and the total magnetic energy contribution is $B^2/2$. Go figure. This actually fixes quite a few things with the shocking and the stabilization and the problem with pressure gradients pushing things the wrong way...
+
+Once I fixed that, using the same initial conditions as in recon_freem (but with fixed initial energy), now I'm going to call this fixed setup recon_fast, or `rs#` in tags. I think I got reconnection to happen, but I'm not super sure. 
+
 ## 02/06
 Oh boy I haven't updated this in a minute... I should do better.
 
