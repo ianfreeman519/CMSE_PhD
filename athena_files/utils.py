@@ -1,7 +1,294 @@
 import os
-import re
 import numpy as np
 import h5py
+import yt
+import re
+from scipy.interpolate import CubicSpline
+from pathlib import Path
+from typing import Any, Dict
+
+_block_re   = re.compile(r"<\s*([^>]+?)\s*>")     # captures whatever is between '<' and '>'
+_comment_re = re.compile(r"#.*$")                 # strip inline comments
+
+def collapse_refinement(arr1d, pos1d, epsilon=1e-8):
+    """
+    Collapse regions of constant values in a refined 1D dataset.
+
+    Parameters
+    ----------
+    arr1d : ndarray
+        1D array of values (e.g., field data).
+    pos1d : ndarray
+        1D array of corresponding positions.
+    epsilon : float
+        Threshold for considering two values different.
+
+    Returns
+    -------
+    fout : list
+        Collapsed field values.
+    xout : list
+        Mean position of each collapsed region.
+    lout : list
+        Length of each collapsed region in number of original cells.
+    """
+    if arr1d.shape != pos1d.shape:
+        raise ValueError("arr1d and pos1d must have the same shape")
+
+    fout, xout, lout = [], [], []
+    istartblock = 0
+
+    for i in range(len(arr1d) - 1):
+        if np.abs(arr1d[i] - arr1d[i + 1]) > epsilon:
+            fout.append(arr1d[i])
+            xout.append(np.mean(pos1d[istartblock:i + 1]))
+            lout.append(i + 1 - istartblock)
+            istartblock = i + 1
+
+    # Final block
+    fout.append(arr1d[-1])
+    xout.append(np.mean(pos1d[istartblock:]))
+    lout.append(len(arr1d) - istartblock)
+
+    return fout, xout, lout
+
+
+def derivative1d_on_mesh(arr1d, pos1d, epsilon=1e-8):
+    """
+    Compute the derivative of a 1D function sampled at unevenly spaced points 
+    using a cubic spline over collapsed refinement regions.
+
+    Parameters
+    ----------
+    arr1d : ndarray
+        The array of data values.
+    pos1d : ndarray
+        The positions corresponding to arr1d.
+    epsilon : float, optional
+        Tolerance used in collapse_refinement to identify flat regions.
+
+    Returns
+    -------
+    deriv : ndarray
+        The derivative of arr1d evaluated at pos1d.
+    """
+    fout, xout, lout = collapse_refinement(arr1d, pos1d, epsilon)
+    cs = CubicSpline(xout, fout)
+    return cs(pos1d, 1)
+
+def dFdx_mesh(arr2d, pos1d, epsilon=1e-8):
+    """
+    Compute the partial derivative ∂F/∂x across a 2D array of values sampled 
+    on a potentially uneven mesh in the x-direction (columns).
+
+    Parameters
+    ----------
+    arr2d : ndarray
+        2D array representing the function values on a 2D mesh.
+    pos1d : ndarray
+        1D array representing the physical x-positions of the columns.
+    epsilon : float, optional
+        Tolerance for identifying uniform regions in the refinement collapse.
+
+    Returns
+    -------
+    dFdx : ndarray
+        2D array of partial derivatives with respect to x.
+    """
+    dFdx = np.zeros_like(arr2d)
+    for j in range(len(arr2d[0, :])):
+        dFdx[:, j] = derivative1d_on_mesh(arr2d[:, j], pos1d, epsilon)
+    return dFdx
+
+def dFdy_mesh(arr2d, pos1d, epsilon=1e-8):
+    """
+    Compute the partial derivative ∂F/∂y across a 2D array of values sampled 
+    on a potentially uneven mesh in the y-direction (rows).
+
+    Parameters
+    ----------
+    arr2d : ndarray
+        2D array representing the function values on a 2D mesh.
+    pos1d : ndarray
+        1D array representing the physical y-positions of the rows.
+    epsilon : float, optional
+        Tolerance for identifying uniform regions in the refinement collapse.
+
+    Returns
+    -------
+    dFdy : ndarray
+        2D array of partial derivatives with respect to y.
+    """
+    dFdy = np.zeros_like(arr2d)
+    for i in range(len(arr2d[:, 0])):
+        dFdy[i, :] = derivative1d_on_mesh(arr2d[i, :], pos1d, epsilon)
+    return dFdy
+
+
+def _current_eta_z(field, data):
+    Jz = data["gas", "velocity_x"]*data["gas", "magnetic_field_y"] - data["gas", "velocity_y"]*data["gas", "magnetic_field_x"]
+    return Jz
+yt.add_field(
+    name=("gas", "current_eta_z"),
+    function=_current_eta_z,
+    sampling_type="local",
+    units="code_magnetic*code_velocity",
+    force_override=True,
+)
+
+def dFdx_1d_non_U_grid(j, x):
+    F = np.zeros_like(j)
+    i = 0
+    while i < len(F) and i != -1:
+        ii = i
+        while np.abs(j[ii] - j[i]) < 1e-6:
+            ii = np.min([ii + 1, len(j)-1])
+            # print(i, ii, np.min([ii + 1, len(j)]))
+            f0 = j[i]
+            if ii == len(j)-1:
+                ii = -1
+                break
+        f1 = j[ii]
+        dx = x[ii] - x[i]
+        F[i:ii] = (f1 - f0) / dx
+        i = ii
+    return F
+
+def dFdy_1d_non_U_grid(j, y):
+    F = np.zeros_like(j)
+    i = 0
+    while i < len(F) and i != -1:
+        ii = i
+        while np.abs(j[ii] - j[i]) < 1e-6:
+            ii = np.min([ii + 1, len(j)-1])
+            # print(i, ii, np.min([ii + 1, len(j)]))
+            f0 = j[i]
+            if ii == len(j)-1:
+                ii = -1
+                break
+        f1 = j[ii]
+        dy = y[ii] - y[i]
+        F[i:ii] = (f1 - f0) / dy
+        i = ii
+    return F
+
+def rolling_average(f, a):
+    out = np.copy(f)
+    for idx, x in enumerate(f[a:-a]):
+        i = idx + a
+        out[i] = np.mean(f[i-a:i+a])
+    return out
+        
+
+def div2D(Fx, Fy, dx, dy):
+    return dFdx(Fx, dx) + dFdy(Fy, dy)
+
+def dFdx(F, x):
+    """
+    Compute the derivative of F with respect to x, where x is a 1D array
+    representing non-uniform grid positions along axis 0 (rows of F).
+
+    Parameters:
+    -----------
+    F : np.ndarray
+        2D array of shape (Nx, Ny)
+    x : np.ndarray
+        1D array of length Nx, giving grid positions along x-axis
+
+    Returns:
+    --------
+    dFdx : np.ndarray
+        Approximate derivative ∂F/∂x, same shape as F
+    """
+    Nx, Ny = F.shape
+    dFdx = np.zeros_like(F)
+
+    # Interior points: 3-point non-uniform central difference
+    for i in range(1, Nx - 1):
+        x0, x1, x2 = x[i-1], x[i], x[i+1]
+        f0, f1, f2 = F[i-1], F[i], F[i+1]
+
+        dx0 = x1 - x0
+        dx1 = x2 - x1
+        denom = dx0 * dx1 * (dx0 + dx1)
+
+        # Coefficients derived from Lagrange interpolation polynomial
+        a = -(2*dx1 + dx0) / (dx0 * (dx0 + dx1))
+        b = (dx1 - dx0) / (dx0 * dx1)
+        c = (2*dx0 + dx1) / (dx1 * (dx0 + dx1))
+
+        dFdx[i, :] = a * f0 + b * f1 + c * f2
+
+    # Forward difference at the first point
+    dx = x[1] - x[0]
+    dFdx[0, :] = (F[1, :] - F[0, :]) / dx
+
+    # Backward difference at the last point
+    dx = x[-1] - x[-2]
+    dFdx[-1, :] = (F[-1, :] - F[-2, :]) / dx
+
+    return dFdx
+    
+    
+import numpy as np
+
+def dFdy(F, y):
+    """
+    Compute the derivative of F with respect to y, where y is a 1D array
+    representing non-uniform grid positions along axis 1 (columns of F).
+
+    Parameters:
+    -----------
+    F : np.ndarray
+        2D array of shape (Nx, Ny)
+    y : np.ndarray
+        1D array of length Ny, giving grid positions along y-axis
+
+    Returns:
+    --------
+    dFdy : np.ndarray
+        Approximate derivative ∂F/∂y, same shape as F
+    """
+    Nx, Ny = F.shape
+    dFdy = np.zeros_like(F)
+
+    # Interior points: 3-point non-uniform central difference
+    for j in range(1, Ny - 1):
+        y0, y1, y2 = y[j - 1], y[j], y[j + 1]
+        dy0 = y1 - y0
+        dy1 = y2 - y1
+        denom = dy0 * dy1 * (dy0 + dy1)
+
+        a = -(2 * dy1 + dy0) / (dy0 * (dy0 + dy1))
+        b = (dy1 - dy0) / (dy0 * dy1)
+        c = (2 * dy0 + dy1) / (dy1 * (dy0 + dy1))
+
+        dFdy[:, j] = a * F[:, j - 1] + b * F[:, j] + c * F[:, j + 1]
+
+    # Forward difference at the first column
+    dy0 = y[1] - y[0]
+    dFdy[:, 0] = (F[:, 1] - F[:, 0]) / dy0
+
+    # Backward difference at the last column
+    dy1 = y[-1] - y[-2]
+    dFdy[:, -1] = (F[:, -1] - F[:, -2]) / dy1
+
+    return dFdy
+
+
+
+def draw_xy_box(p, xmin, xmax, ymin, ymax):
+    """Draws a two dimensional box in the xy plane of an xy slice plot p
+    
+    Args:
+        p (yt plot): plot to draw a box on
+        xmin, ymin (floats): bottom left corner of box (coord_system="data")
+        xmax, ymax (floats): top right corner of box (coord_system="data")
+    """
+    p.annotate_line((xmin, ymin,0), (xmax, ymin,0), coord_system="data")
+    p.annotate_line((xmax, ymin,0), (xmax, ymax,0), coord_system="data")
+    p.annotate_line((xmax, ymax,0), (xmin, ymax,0), coord_system="data")
+    p.annotate_line((xmin, ymax,0), (xmin, ymin,0), coord_system="data")
 
 def change_in_box(quantity, u, v, dx, dy, dz, dt):
     """Calculate the integral of the flux through a bounding box in the x- and y- direction
@@ -90,34 +377,51 @@ def get_simulation_time(hdf5_file):
     return None
 
 
-def parse_input_file(filename):
-    # Initialize variables to None
-    P0 = None
-    rho0 = None
-    v0 = None
-    b0 = None
-    L = None
-    
-    # Open and read the file
-    with open(filename, 'r') as file:
-        lines = file.readlines()
-    
-    # Look for the relevant lines
-    for line in lines:
-        stripped_line = line.strip()
-        if stripped_line.startswith("P0"):
-            P0 = float(stripped_line.split('=')[1].strip())
-        elif stripped_line.startswith("rho0"):
-            rho0 = float(stripped_line.split('=')[1].strip())
-        elif stripped_line.startswith("v0"):
-            v0 = float(stripped_line.split('=')[1].strip())
-        elif stripped_line.startswith("b0") or stripped_line.startswith("d\t"):  # Match only if 'd' is followed by space or tab
-            b0 = float(stripped_line.split('=')[1].strip())
-        elif stripped_line.startswith("L"):
-            L = float(stripped_line.split('=')[1].strip())
-    
-    return P0, rho0, v0, b0, L
+def parse_input_file(filename: str | Path) -> Dict[str, Any]:
+    """
+    Parse an Athena++/Athena-PK style input file.
 
+    Returns
+    -------
+    dict
+        Keys are "<block>_<variable>" (both lower-cased, no spaces),
+        values are int, float, or str depending on what parses cleanly.
+    """
+    params: Dict[str, Any] = {}
+    current_block = "global"                      # fallback for lines outside any block
+
+    with open(filename, "r") as fp:
+        for raw in fp:
+            line = _comment_re.sub("", raw).strip()   # drop comments, whitespace
+            if not line:
+                continue                             # blank line → skip
+
+            # ─── Block header? ─────────────────────────────────────────────
+            block_match = _block_re.fullmatch(line)
+            if block_match:
+                current_block = block_match.group(1).strip().lower()
+                continue
+
+            # ─── key = value line? ────────────────────────────────────────
+            if "=" not in line:
+                continue                             # ignore lines with no '='
+
+            var, val = (x.strip() for x in line.split("=", 1))
+
+            # best-effort numeric conversion
+            try:
+                # int() will also parse hex/octal if prefixed (0x, 0o, 0b)
+                val_parsed: Any = int(val, 0)
+            except ValueError:
+                try:
+                    val_parsed = float(val)
+                except ValueError:
+                    val_parsed = val                       # keep raw string
+
+            key = f"{current_block}_{var}".lower()
+            params[key] = val_parsed
+
+    return params
 
 def grabFileSeries(
     scratchdirectory,
