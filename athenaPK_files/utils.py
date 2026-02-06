@@ -382,7 +382,7 @@ def get_simulation_time(hdf5_file):
     return None
 
 
-def parse_input_file(filename: str | Path) -> Dict[str, Any]:
+def parse_input_file(filename: str):
     """
     Parse an Athena++/Athena-PK style input file.
 
