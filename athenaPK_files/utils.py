@@ -7,6 +7,7 @@ from scipy.interpolate import CubicSpline
 from pathlib import Path
 from typing import Any, Dict
 from ipyevents import Event
+import pickle as pkl
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
@@ -49,6 +50,7 @@ class Fields:
         self.curlBx = ("parthenon", "curlBx")
         self.curlBy = ("parthenon", "curlBy")
         self.curlBz = ("parthenon", "curlBz")
+        self.divv = ("parthenon", "divv")
         self.T = ("parthenon", "T")
         self.alfven_speed = ("gas", "alfven_speed")
         self.angular_momentum_magnitude = ("gas", "angular_momentum_magnitude")
@@ -132,6 +134,7 @@ class Fields:
         self.ohmic_heating_timescale = ('gas', 'ohmic_heating_timescale')
         self.eta = ("parthenon", "eta")
         self.dt_hyp_fms = ("parthenon", "dt_hyp_fms")
+        self.dt_diff = ("gas", "dt_diff")
         self.dt_hyp_cs = ("parthenon", "dt_hyp_cs")
         self.dt_cool_local = ("parthenon", "dt_cool_local")
         self.dt_heat_local = ("parthenon", "dt_heat_local")
@@ -159,7 +162,7 @@ class AthenaPKSliceExplorer:
     def __init__(
         self,
         directoryDict,
-        fields,
+        fields=None,
         basename="parthenon",
         output_type="out0",
         dictkey="wider_sheet_fixed",
@@ -167,60 +170,91 @@ class AthenaPKSliceExplorer:
     ):
         self.ui = None
         self.key_event = None
+
         self.directoryDict = directoryDict
         self.fields = fields
         self.basename = basename
         self.output_type = output_type
-        self.dictkey = dictkey
 
-        self.fileseries = None
+        if not self.directoryDict:
+            raise ValueError("directoryDict must contain at least one run.")
+
+        if dictkey not in self.directoryDict:
+            dictkey = next(iter(self.directoryDict))
+
+        self.dictkey = dictkey
+        self.params = None
+
+        self.fileseries = []
         self.ts = None
         self.ds = None
 
-        self._build_widgets(default_index)
-
-        self._suppress_callbacks = True
-        self._load_series(quiet=True)
         self._suppress_callbacks = False
 
+        self._build_widgets(default_index)
         self._register_callbacks()
+
+        # Populate the initial file series and field dropdown.
+        self._load_series(quiet=True)
+
+    # ============================================================
+    # Callback registration
+    # ============================================================
+
+    def _register_callbacks(self):
+        self.plot_button.on_click(self._on_plot_clicked)
+        self.reload_button.on_click(self._on_reload_clicked)
+        self.load_settings_button.on_click(self._on_load_settings_clicked)
+        self.save_settings_button.on_click(self._on_save_settings_clicked)
+
+        self.dictkey_widget.observe(
+            self._on_dictkey_changed,
+            names="value",
+        )
 
     def _on_keypress(self, event):
         """
-        Replot on selected keyboard shortcuts.
+        Replot using selected keyboard shortcuts.
 
-        Notes:
-        - event["key"] is the pressed key, e.g. "p", "Enter"
-        - event["shiftKey"] is True when Shift is held
-        - event["ctrlKey"], event["altKey"], event["metaKey"] are also available
+        Supported shortcuts
+        -------------------
+        Shift+P
+            Replot.
+
+        Enter
+            Replot.
         """
-
         key = event.get("key", "")
         shift = event.get("shiftKey", False)
 
-        # Press shift+p to replot
         if key.lower() == "p" and shift:
             self.plot()
-
-        # Press Enter to replot
         elif key == "Enter":
             self.plot()
 
-    def _register_callbacks(self):
-        # Clear button callbacks
-        self.plot_button._click_handlers.callbacks = []
-        self.reload_button._click_handlers.callbacks = []
-
-        self.plot_button.on_click(self._on_plot_clicked)
-        self.reload_button.on_click(self._on_reload_clicked)
-
-        # Clear dictkey observers
-        for cb in list(self.dictkey_widget._trait_notifiers.get("value", {}).get("change", [])):
-            self.dictkey_widget.unobserve(cb, names="value")
-
-        self.dictkey_widget.observe(self._on_dictkey_changed, names="value")
+    # ============================================================
+    # Widget construction
+    # ============================================================
 
     def _build_widgets(self, default_index):
+        default_index = max(int(default_index), 0)
+
+        self.save_settings_file = widgets.Text(
+            value=".last_settings.pkl",
+            description="Settings file:",
+            layout=widgets.Layout(width="450px"),
+        )
+
+        self.load_settings_button = widgets.Button(
+            description="Load Settings",
+            button_style="info",
+        )
+
+        self.save_settings_button = widgets.Button(
+            description="Save Settings",
+            button_style="info",
+        )
+
         self.dictkey_widget = widgets.Dropdown(
             options=list(self.directoryDict.keys()),
             value=self.dictkey,
@@ -231,7 +265,7 @@ class AthenaPKSliceExplorer:
         self.index_widget = widgets.IntSlider(
             value=default_index,
             min=0,
-            max=1,
+            max=max(default_index, 1),
             step=1,
             description="Index:",
             continuous_update=False,
@@ -244,47 +278,20 @@ class AthenaPKSliceExplorer:
             description="Axis:",
         )
 
-        field_options = {}
-
-        for attr_name in dir(self.fields):
-            if attr_name.startswith("_"):
-                continue
-
-            field_value = getattr(self.fields, attr_name)
-
-            if (
-                isinstance(field_value, tuple)
-                and len(field_value) == 2
-                and isinstance(field_value[0], str)
-                and isinstance(field_value[1], str)
-            ):
-                display_name = field_value[1]
-                field_options[display_name] = field_value
-
-        field_options = dict(sorted(field_options.items()))
-
-        default_field = self.fields.density if "density" in field_options else next(iter(field_options.values()))
+        # Populated after the first dataset is loaded.
+        self.field_widget = widgets.Dropdown(
+            options={},
+            description="Field:",
+            layout=widgets.Layout(width="400px"),
+        )
 
         self.cmap_widget = widgets.Text(
             value="plasma",
             description="Cmap:",
         )
 
-        self.field_widget = widgets.Dropdown(
-            options=field_options,
-            value=default_field,
-            description="Field:",
-            layout=widgets.Layout(width="350px"),
-        )
-    
-
-        # Remove unavailable fields from dropdown
-        self.field_widget.options = {
-            k: v for k, v in self.field_widget.options.items() if v is not None
-        }
-
         self.zoom_widget = widgets.IntSlider(
-            value=3,
+            value=0,
             min=0,
             max=5,
             step=1,
@@ -317,6 +324,11 @@ class AthenaPKSliceExplorer:
             description="Cycle text",
         )
 
+        self.use_center_widget = widgets.Checkbox(
+            value=False,
+            description="Use center",
+        )
+
         self.xcenter_widget = widgets.FloatText(
             value=0.0,
             description="x center:",
@@ -335,26 +347,21 @@ class AthenaPKSliceExplorer:
             layout=widgets.Layout(width="180px"),
         )
 
-        self.use_center_widget = widgets.Checkbox(
+        self.use_width_widget = widgets.Checkbox(
             value=False,
-            description="Use center",
+            description="Use width",
         )
 
         self.width_x_widget = widgets.FloatText(
-            value=5,
+            value=5.0,
             description="width x:",
             layout=widgets.Layout(width="180px"),
         )
 
         self.width_y_widget = widgets.FloatText(
-            value=1,
+            value=1.0,
             description="width y:",
             layout=widgets.Layout(width="180px"),
-        )
-
-        self.use_width_widget = widgets.Checkbox(
-            value=False,
-            description="Use width",
         )
 
         self.use_limits_widget = widgets.Checkbox(
@@ -363,17 +370,17 @@ class AthenaPKSliceExplorer:
         )
 
         self.zlim_min_widget = widgets.FloatText(
-            value=1e-6,
+            value=1.0e-6,
             description="field min:",
             layout=widgets.Layout(width="180px"),
         )
 
         self.zlim_max_widget = widgets.FloatText(
-            value=1e10,
+            value=1.0e10,
             description="field max:",
             layout=widgets.Layout(width="180px"),
         )
-        
+
         self.log_field_widget = widgets.Checkbox(
             value=True,
             description="Log field",
@@ -391,49 +398,360 @@ class AthenaPKSliceExplorer:
 
         self.output = widgets.Output()
 
-    def _load_series(self, *, quiet=False):
-        self.dictkey = self.dictkey_widget.value
+    # ============================================================
+    # Field discovery
+    # ============================================================
 
-        self.fileseries = grabFileSeries(
-            self.directoryDict[self.dictkey],
-            basename=self.basename,
-            outputnum=self.output_type,
-            extension="phdf",
-        )
+    def _iter_configured_fields(self):
+        """
+        Yield configured field names and yt field tuples.
 
-        self.ts = yt.DatasetSeries(self.fileseries)
+        Supports either:
 
-        nfiles = len(self.fileseries)
+            fields.density = ("gas", "density")
 
-        # Avoid slider trait weirdness while changing max/value.
-        self._suppress_callbacks = True
-        self.index_widget.max = max(nfiles - 1, 0)
+        or a mapping such as:
 
-        if self.index_widget.value > self.index_widget.max:
-            self.index_widget.value = self.index_widget.max
-
-        self._suppress_callbacks = False
-
-        if quiet:
+            fields = {
+                "density": ("gas", "density"),
+            }
+        """
+        if self.fields is None:
             return
 
-        self._print_series_info()
+        if isinstance(self.fields, dict):
+            entries = self.fields.items()
+        else:
+            entries = (
+                (name, getattr(self.fields, name))
+                for name in dir(self.fields)
+                if not name.startswith("_")
+            )
+
+        for display_name, field_value in entries:
+            is_field_tuple = (
+                isinstance(field_value, tuple)
+                and len(field_value) == 2
+                and isinstance(field_value[0], str)
+                and isinstance(field_value[1], str)
+            )
+
+            if is_field_tuple:
+                yield str(display_name), field_value
+
+    def _get_dataset_field_options(self, ds):
+        """
+        Build the field dropdown options from one dataset.
+
+        Configured fields are retained only when they exist in the
+        dataset. Additional gas and parthenon fields are added using
+        fully qualified labels such as:
+
+            gas_temperature
+            parthenon_prim_pressure
+
+        Returns
+        -------
+        dict
+            Mapping from display labels to yt field tuples.
+        """
+        # Force yt to initialize field and index information.
+        _ = ds.index
+
+        native_fields = set(ds.field_list)
+        derived_fields = set(ds.derived_field_list)
+        available_fields = native_fields | derived_fields
+
+        field_options = {}
+        fields_already_added = set()
+
+        # Add explicitly configured fields first.
+        for display_name, field_value in self._iter_configured_fields():
+            if field_value not in available_fields:
+                continue
+
+            if field_value in fields_already_added:
+                continue
+
+            final_display_name = display_name
+
+            if final_display_name in field_options:
+                final_display_name = (
+                    f"{field_value[0]}_{field_value[1]}"
+                )
+
+            field_options[final_display_name] = field_value
+            fields_already_added.add(field_value)
+
+        # Add fields discovered directly from the dataset.
+        for field_value in sorted(available_fields):
+            field_type, field_name = field_value
+
+            if field_type not in {"gas", "parthenon"}:
+                continue
+
+            if field_value in fields_already_added:
+                continue
+
+            display_name = f"{field_type}_{field_name}"
+
+            # This should rarely occur, but protect against collisions.
+            if display_name in field_options:
+                suffix = 2
+                base_name = display_name
+
+                while display_name in field_options:
+                    display_name = f"{base_name}_{suffix}"
+                    suffix += 1
+
+            field_options[display_name] = field_value
+            fields_already_added.add(field_value)
+
+        return dict(
+            sorted(
+                field_options.items(),
+                key=lambda item: item[0].lower(),
+            )
+        )
+
+    def _configured_density_field(self):
+        """
+        Return the configured density field, when one exists.
+        """
+        if self.fields is None:
+            return None
+
+        if isinstance(self.fields, dict):
+            return self.fields.get("density")
+
+        return getattr(self.fields, "density", None)
+
+    def _refresh_field_widget(self, ds, preferred_field=None):
+        """
+        Rebuild the field dropdown using fields available in `ds`.
+
+        Selection priority
+        ------------------
+        1. The preferred field loaded from saved settings.
+        2. The currently selected field.
+        3. The configured density field.
+        4. ("gas", "density").
+        5. ("parthenon", "prim_density").
+        6. The first available field.
+        """
+        field_options = self._get_dataset_field_options(ds)
+
+        if not field_options:
+            raise RuntimeError(
+                "No usable gas or parthenon fields were found "
+                "in the first dataset."
+            )
+
+        valid_fields = tuple(field_options.values())
+        current_field = self.field_widget.value
+        configured_density = self._configured_density_field()
+
+        if preferred_field in valid_fields:
+            selected_field = preferred_field
+        elif current_field in valid_fields:
+            selected_field = current_field
+        elif configured_density in valid_fields:
+            selected_field = configured_density
+        elif ("gas", "density") in valid_fields:
+            selected_field = ("gas", "density")
+        elif ("parthenon", "prim_density") in valid_fields:
+            selected_field = ("parthenon", "prim_density")
+        else:
+            selected_field = valid_fields[0]
+
+        old_suppress_state = self._suppress_callbacks
+        self._suppress_callbacks = True
+
+        try:
+            self.field_widget.options = field_options
+            self.field_widget.value = selected_field
+        finally:
+            self._suppress_callbacks = old_suppress_state
+
+    # ============================================================
+    # Dataset-series loading
+    # ============================================================
+
+    def _load_series(self, *, quiet=False, preferred_field=None):
+        """
+        Load the currently selected run and rebuild dependent widgets.
+        """
+        selected_dictkey = self.dictkey_widget.value
+
+        if selected_dictkey not in self.directoryDict:
+            raise KeyError(
+                f"Run '{selected_dictkey}' is not in directoryDict."
+            )
+
+        self.dictkey = selected_dictkey
+
+        try:
+            fileseries = grabFileSeries(
+                self.directoryDict[self.dictkey],
+                basename=self.basename,
+                outputnum=self.output_type,
+                extension="phdf",
+            )
+        except Exception as exc:
+            self.fileseries = []
+            self.ts = None
+            self.params = None
+
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Could not build file series for "
+                    f"dictkey='{self.dictkey}':"
+                )
+                print(exc)
+
+            return False
+
+        self.fileseries = list(fileseries)
+        nfiles = len(self.fileseries)
+
+        if nfiles > 0:
+            self.ts = yt.DatasetSeries(self.fileseries)
+        else:
+            self.ts = None
+
+        try:
+            self.params = parse_input_file(
+                self.directoryDict[self.dictkey]
+            )
+        except Exception as exc:
+            self.params = None
+
+            if not quiet:
+                with self.output:
+                    print(
+                        f"Could not parse input parameters for "
+                        f"dictkey='{self.dictkey}': {exc}"
+                    )
+
+        old_suppress_state = self._suppress_callbacks
+        self._suppress_callbacks = True
+
+        try:
+            self.index_widget.max = max(nfiles - 1, 0)
+
+            if self.index_widget.value > self.index_widget.max:
+                self.index_widget.value = self.index_widget.max
+
+            if self.index_widget.value < self.index_widget.min:
+                self.index_widget.value = self.index_widget.min
+        finally:
+            self._suppress_callbacks = old_suppress_state
+
+        if nfiles == 0:
+            old_suppress_state = self._suppress_callbacks
+            self._suppress_callbacks = True
+
+            try:
+                self.field_widget.options = {}
+            finally:
+                self._suppress_callbacks = old_suppress_state
+
+            if not quiet:
+                with self.output:
+                    clear_output(wait=True)
+                    print(
+                        f"No files found for dictkey='{self.dictkey}'."
+                    )
+
+            return False
+
+        # Inspect the first dataset to build the field dropdown.
+        try:
+            first_ds = yt.load(self.fileseries[0])
+        except Exception as exc:
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Could not load the first dataset for "
+                    f"dictkey='{self.dictkey}':"
+                )
+                print(exc)
+
+            return False
+
+        # Register optional custom fields before inspecting the complete
+        # derived field list.
+        try:
+            add_timescale_fields(first_ds)
+        except Exception as exc:
+            if not quiet:
+                with self.output:
+                    print(
+                        "Could not add timescale fields to the first "
+                        f"dataset: {exc}"
+                    )
+
+        try:
+            self._refresh_field_widget(
+                first_ds,
+                preferred_field=preferred_field,
+            )
+        except Exception as exc:
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Could not construct the field dropdown for "
+                    f"dictkey='{self.dictkey}':"
+                )
+                print(exc)
+
+            return False
+
+        if not quiet:
+            self._print_series_info()
+            self._print_param_info()
+
+        return True
+
+    # ============================================================
+    # Information output
+    # ============================================================
 
     def _print_series_info(self):
         nfiles = len(self.fileseries)
 
         with self.output:
             clear_output(wait=True)
-            print(f"Loaded {nfiles} files for dictkey='{self.dictkey}'")
+
+            print(
+                f"Loaded {nfiles} files for "
+                f"dictkey='{self.dictkey}'"
+            )
+
             if nfiles > 0:
                 print(f"First file: {self.fileseries[0]}")
                 print(f"Last file:  {self.fileseries[-1]}")
 
-    def _on_dictkey_changed(self, change):
-        if getattr(self, "_suppress_callbacks", False):
+    def _print_param_info(self):
+        if not self.params:
             return
 
-        if change["old"] == change["new"]:
+        with self.output:
+            print(f"Parameters for dictkey='{self.dictkey}':")
+
+            for key, value in self.params.items():
+                print(f"  {key}: {value}")
+
+    # ============================================================
+    # Widget callbacks
+    # ============================================================
+
+    def _on_dictkey_changed(self, change):
+        if self._suppress_callbacks:
+            return
+
+        if change.get("old") == change.get("new"):
             return
 
         self._load_series()
@@ -442,7 +760,201 @@ class AthenaPKSliceExplorer:
         self._load_series()
 
     def _on_plot_clicked(self, button):
+        self.save_settings_to_file()
         self.plot()
+
+    def _on_save_settings_clicked(self, button):
+        self.save_settings_to_file()
+
+    def _on_load_settings_clicked(self, button):
+        settings_path = self.save_settings_file.value.strip()
+
+        if not settings_path:
+            with self.output:
+                clear_output(wait=True)
+                print("No settings filename was provided.")
+
+            return
+
+        try:
+            with open(settings_path, "rb") as f:
+                settings = pkl.load(f)
+        except FileNotFoundError:
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Settings file '{settings_path}' was not found."
+                )
+
+            return
+        except Exception as exc:
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Could not load settings from "
+                    f"'{settings_path}':"
+                )
+                print(exc)
+
+            return
+
+        if not isinstance(settings, dict):
+            with self.output:
+                clear_output(wait=True)
+                print(
+                    f"Settings file '{settings_path}' does not "
+                    "contain a settings dictionary."
+                )
+
+            return
+
+        widget_map = {
+            "axis": self.axis_widget,
+            "cmap": self.cmap_widget,
+            "zoom_exp": self.zoom_widget,
+            "annotate_velocity": self.annotate_velocity_widget,
+            "annotate_grids": self.annotate_grids_widget,
+            "Bstreamlines": self.Bstreamlines_widget,
+            "timestamp": self.timestamp_widget,
+            "add_cycle": self.add_cycle_widget,
+            "use_center": self.use_center_widget,
+            "xcenter": self.xcenter_widget,
+            "ycenter": self.ycenter_widget,
+            "zcenter": self.zcenter_widget,
+            "use_width": self.use_width_widget,
+            "width_x": self.width_x_widget,
+            "width_y": self.width_y_widget,
+            "use_limits": self.use_limits_widget,
+            "zlim_min": self.zlim_min_widget,
+            "zlim_max": self.zlim_max_widget,
+            "log_field": self.log_field_widget,
+        }
+
+        old_suppress_state = self._suppress_callbacks
+        self._suppress_callbacks = True
+
+        try:
+            loaded_dictkey = settings.get("dictkey")
+
+            if loaded_dictkey in self.directoryDict:
+                self.dictkey_widget.value = loaded_dictkey
+                self.dictkey = loaded_dictkey
+            elif loaded_dictkey is not None:
+                with self.output:
+                    clear_output(wait=True)
+                    print(
+                        f"Saved run '{loaded_dictkey}' is unavailable. "
+                        f"Keeping '{self.dictkey_widget.value}'."
+                    )
+
+            for key, widget in widget_map.items():
+                if key not in settings:
+                    continue
+
+                try:
+                    widget.value = settings[key]
+                except Exception as exc:
+                    with self.output:
+                        print(
+                            f"Could not restore setting '{key}' "
+                            f"with value {settings[key]!r}: {exc}"
+                        )
+        finally:
+            self._suppress_callbacks = old_suppress_state
+
+        load_successful = self._load_series(
+            quiet=True,
+            preferred_field=settings.get("field"),
+        )
+
+        if not load_successful:
+            return
+
+        if "index" in settings:
+            try:
+                saved_index = int(settings["index"])
+            except (TypeError, ValueError):
+                saved_index = self.index_widget.value
+
+            clamped_index = max(
+                self.index_widget.min,
+                min(saved_index, self.index_widget.max),
+            )
+
+            self.index_widget.value = clamped_index
+
+        with self.output:
+            clear_output(wait=True)
+            print(f"Settings loaded from '{settings_path}'.")
+            print(f"Run:   {self.dictkey_widget.value}")
+            print(f"Index: {self.index_widget.value}")
+            print(f"Field: {self.field_widget.value}")
+
+        self.plot()
+
+    # ============================================================
+    # Settings persistence
+    # ============================================================
+
+    def _collect_settings(self):
+        return {
+            "dictkey": self.dictkey_widget.value,
+            "index": self.index_widget.value,
+            "axis": self.axis_widget.value,
+            "field": self.field_widget.value,
+            "cmap": self.cmap_widget.value,
+            "zoom_exp": self.zoom_widget.value,
+            "annotate_velocity": (
+                self.annotate_velocity_widget.value
+            ),
+            "annotate_grids": self.annotate_grids_widget.value,
+            "Bstreamlines": self.Bstreamlines_widget.value,
+            "timestamp": self.timestamp_widget.value,
+            "add_cycle": self.add_cycle_widget.value,
+            "use_center": self.use_center_widget.value,
+            "xcenter": self.xcenter_widget.value,
+            "ycenter": self.ycenter_widget.value,
+            "zcenter": self.zcenter_widget.value,
+            "use_width": self.use_width_widget.value,
+            "width_x": self.width_x_widget.value,
+            "width_y": self.width_y_widget.value,
+            "use_limits": self.use_limits_widget.value,
+            "zlim_min": self.zlim_min_widget.value,
+            "zlim_max": self.zlim_max_widget.value,
+            "log_field": self.log_field_widget.value,
+        }
+
+    def save_settings_to_file(self):
+        settings_path = self.save_settings_file.value.strip()
+
+        if not settings_path:
+            with self.output:
+                print("No settings filename was provided.")
+
+            return False
+
+        if settings_path.lower() == "none":
+            return True
+
+        settings = self._collect_settings()
+
+        try:
+            with open(settings_path, "wb") as f:
+                pkl.dump(settings, f)
+        except Exception as exc:
+            with self.output:
+                print(
+                    f"Could not save settings to "
+                    f"'{settings_path}': {exc}"
+                )
+
+            return False
+
+        return True
+
+    # ============================================================
+    # Plot option helpers
+    # ============================================================
 
     def _get_center(self):
         if not self.use_center_widget.value:
@@ -458,45 +970,83 @@ class AthenaPKSliceExplorer:
         if not self.use_width_widget.value:
             return None
 
-        # This assumes your standard_slice helper accepts width=(wx, wy)
-        # in code units or whatever default units it expects.
         return (
             self.width_x_widget.value,
             self.width_y_widget.value,
         )
 
+    # ============================================================
+    # Plotting
+    # ============================================================
+
     def plot(self):
         with self.output:
             clear_output(wait=True)
 
-            index = self.index_widget.value
-            print(f"Loading index {index} from run '{self.dictkey_widget.value}'")
+            if not self.fileseries or self.ts is None:
+                print(
+                    f"No datasets are available for run "
+                    f"'{self.dictkey_widget.value}'."
+                )
+                return
 
-            self.ds = self.ts[index]
+            if self.field_widget.value is None:
+                print("No valid field is selected.")
+                return
+
+            index = self.index_widget.value
+
+            if index < 0 or index >= len(self.fileseries):
+                print(
+                    f"Index {index} is outside the available range "
+                    f"0 through {len(self.fileseries) - 1}."
+                )
+                return
+
+            print(
+                f"Loading index {index} from run "
+                f"'{self.dictkey_widget.value}'"
+            )
+
+            try:
+                self.ds = self.ts[index]
+            except Exception as exc:
+                print(f"Could not load dataset index {index}: {exc}")
+                return
+
             try:
                 add_timescale_fields(self.ds)
-            except:
-                print("Fail on adding timescale fields; proceeding without them.")
+            except Exception as exc:
+                print(
+                    "Failed to add timescale fields; "
+                    f"proceeding without them: {exc}"
+                )
+
             field = self.field_widget.value
             axis = self.axis_widget.value
             center = self._get_center()
             width = self._get_width()
 
-            kwargs = dict(
-                axis=axis,
-                zoom_exp=self.zoom_widget.value,
-                annotate_velocity=self.annotate_velocity_widget.value,
-                annotate_grids=self.annotate_grids_widget.value,
-                Bstreamlines=self.Bstreamlines_widget.value,
-                cmap=self.cmap_widget.value,
-                annotate_timestamp=self.timestamp_widget.value,
-                timestamp_textargs={"color": "white"},
-                set_log=self.log_field_widget.value,
-                zlim=[None, None],
-            )
-            
+            kwargs = {
+                "axis": axis,
+                "zoom_exp": self.zoom_widget.value,
+                "annotate_velocity": (
+                    self.annotate_velocity_widget.value
+                ),
+                "annotate_grids": self.annotate_grids_widget.value,
+                "Bstreamlines": self.Bstreamlines_widget.value,
+                "cmap": self.cmap_widget.value,
+                "annotate_timestamp": self.timestamp_widget.value,
+                "timestamp_textargs": {"color": "white"},
+                "set_log": self.log_field_widget.value,
+                "zlim": [None, None],
+            }
+
             if self.use_limits_widget.value:
-                kwargs["zlim"] = [self.zlim_min_widget.value, self.zlim_max_widget.value]
+                kwargs["zlim"] = [
+                    self.zlim_min_widget.value,
+                    self.zlim_max_widget.value,
+                ]
 
             if center is not None:
                 kwargs["center"] = center
@@ -504,74 +1054,116 @@ class AthenaPKSliceExplorer:
             if width is not None:
                 kwargs["width"] = width
 
-            p = standard_slice(
-                self.ds,
-                field,
-                **kwargs,
-            )
+            try:
+                p = standard_slice(
+                    self.ds,
+                    field,
+                    **kwargs,
+                )
+            except Exception as exc:
+                print(
+                    f"Could not construct plot for field "
+                    f"{field!r}: {exc}"
+                )
+                return
 
             if self.add_cycle_widget.value:
-                p.annotate_text(
-                    [0.03, 0.1],
-                    f"cycle={get_cycle(self.ds)}",
-                    coord_system="axis",
-                    text_args={"color": "white"},
-                )
+                try:
+                    p.annotate_text(
+                        [0.03, 0.1],
+                        f"cycle={get_cycle(self.ds)}",
+                        coord_system="axis",
+                        text_args={"color": "white"},
+                    )
+                except Exception as exc:
+                    print(
+                        f"Could not annotate the cycle number: {exc}"
+                    )
 
-            p.show()
+            try:
+                p.show()
+            except Exception as exc:
+                print(f"Could not display plot: {exc}")
+
+    # ============================================================
+    # Widget display
+    # ============================================================
 
     def show(self):
-        controls_top = widgets.HBox([
-            self.dictkey_widget,
-            self.reload_button,
-            self.plot_button,
-            self.timestamp_widget,
-            self.add_cycle_widget,
-        ])
+        controls_top = widgets.HBox(
+            [
+                self.dictkey_widget,
+                self.reload_button,
+                self.plot_button,
+                self.timestamp_widget,
+                self.add_cycle_widget,
+            ]
+        )
 
-        controls_mid = widgets.HBox([
-            self.index_widget,
-            self.axis_widget,
-            self.field_widget,
-            self.cmap_widget,
-        ])
+        controls_mid = widgets.HBox(
+            [
+                self.index_widget,
+                self.axis_widget,
+                self.field_widget,
+                self.cmap_widget,
+            ]
+        )
 
-        controls_opts = widgets.HBox([
-            self.zoom_widget,
-            self.annotate_velocity_widget,
-            self.annotate_grids_widget,
-            self.Bstreamlines_widget,
-        ])
+        controls_opts = widgets.HBox(
+            [
+                self.zoom_widget,
+                self.annotate_velocity_widget,
+                self.annotate_grids_widget,
+                self.Bstreamlines_widget,
+            ]
+        )
 
-        center_controls = widgets.HBox([
-            self.use_center_widget,
-            self.xcenter_widget,
-            self.ycenter_widget,
-            self.zcenter_widget,
-        ])
+        center_controls = widgets.HBox(
+            [
+                self.use_center_widget,
+                self.xcenter_widget,
+                self.ycenter_widget,
+                self.zcenter_widget,
+            ]
+        )
 
-        width_controls = widgets.HBox([
-            self.use_width_widget,
-            self.width_x_widget,
-            self.width_y_widget,
-        ])
+        width_controls = widgets.HBox(
+            [
+                self.use_width_widget,
+                self.width_x_widget,
+                self.width_y_widget,
+            ]
+        )
 
-        zlim_controls = widgets.HBox([
-            self.use_limits_widget,
-            self.zlim_min_widget,
-            self.zlim_max_widget,
-            self.log_field_widget,
-        ])
+        zlim_controls = widgets.HBox(
+            [
+                self.use_limits_widget,
+                self.zlim_min_widget,
+                self.zlim_max_widget,
+                self.log_field_widget,
+            ]
+        )
 
-        self.ui = widgets.VBox([
-            controls_top,
-            controls_mid,
-            controls_opts,
-            center_controls,
-            width_controls,
-            zlim_controls,
-            self.output,
-        ])
+        settings_controls = widgets.HBox(
+            [
+                self.save_settings_file,
+                self.load_settings_button,
+                self.save_settings_button,
+            ]
+        )
+
+        self.ui = widgets.VBox(
+            [
+                controls_top,
+                controls_mid,
+                controls_opts,
+                center_controls,
+                width_controls,
+                zlim_controls,
+                settings_controls,
+                self.output,
+            ]
+        )
 
         display(self.ui)
         self._print_series_info()
@@ -676,6 +1268,64 @@ def standard_slice(ds, field,
     if field[1] == "adiabatic_heating_timescale": p.set_colorbar_label(field, r"$\tau_{\Pi} = 1/|\left(\left(\gamma-1\right)\nabla\cdot v\right)|$ (s)")
     if field[1] == "adiabatic_over_cooling_timescale_ratio": p.set_colorbar_label(field, r"$\tau_{\mathrm{\Pi}} / \tau_{\mathrm{cooling}}$")
     if field[1] == "adiabatic_over_ohmic_timescale_ratio": p.set_colorbar_label(field, r"$\tau_{\mathrm{\Pi}} / \tau_{\mathrm{\eta}}$")
+    if ("timescale" in field[1] or "dt_" in field[1]) and "_r" not in cmap:
+        print("Plotting timescale field - inverting colorbar so that shorter timescales are brighter.")
+        p.set_cmap(field, cmap + "_r")
+    return p
+
+def plot_from_saved_settings(settings_path, dictionary):
+    """
+    Load settings from a pickle file and generate a plot.
+
+    Parameters
+    ----------
+    settings_path : str
+        Path to the pickle file containing saved settings.
+    """
+    try:
+        with open(settings_path, "rb") as f:
+            settings = pkl.load(f)
+    except Exception as exc:
+        print(f"Could not load settings from '{settings_path}': {exc}")
+        return
+
+    if not isinstance(settings, dict):
+        print(f"Settings file '{settings_path}' does not contain a settings dictionary.")
+        return
+
+    fileseries = grabFileSeries(dictionary[settings["dictkey"]], basename="parthenon", outputnum="out0")
+    ds = yt.load(fileseries[settings["index"]])
+    if not settings["use_width"]:
+        width = None
+    else:
+        width = [settings["width_x"], settings["width_y"]]
+    if not settings["use_center"]:
+        center = [0.0, 0.0, 0.0]
+    else:
+        center = [settings["xcenter"], settings["ycenter"], settings["zcenter"]]
+    if not settings["use_limits"]:
+        zlim = [None, None]
+    else:
+        zlim = [settings["zlim_min"], settings["zlim_max"]]
+    p = standard_slice(
+        ds,
+        settings["field"],
+        cmap=settings["cmap"],
+        axes_unit="mm",
+        set_width=width,
+        set_width_units=None,
+        annotate_grids=settings["annotate_grids"],
+        annotate_velocity=settings["annotate_velocity"],
+        Bstreamlines=settings["Bstreamlines"],
+        annotate_timestamp=settings["timestamp"],
+        annotate_cycle=settings["add_cycle"],
+        zoom_exp=settings["zoom_exp"],
+        set_log=settings["log_field"],
+        zlim=zlim,
+        axis=settings["axis"],
+        center=center,
+    )
+
     return p
 
 def free_free_loss(T, ni, Zbar=3):
@@ -766,8 +1416,24 @@ def _adiabatic_over_ohmic_timescale_ratio(field, data):
     tau_ohmic = data["gas", "ohmic_heating_timescale"]
     return tau_adiabatic / tau_ohmic
 
+def _dt_diff(field, data):
+    # Returns the timestep based on the diffusion CFL condition: dt = dx^2 / eta
+    eta = data["parthenon", "eta"] * data.ds.units.cm**2 / data.ds.units.s
+    dx = data["index", "dx"] * data.ds.units.cm
+    dy = data["index", "dy"] * data.ds.units.cm
+    dz = data["index", "dz"] * data.ds.units.cm
+    ds = np.min([dx, dy, dz])
+    dt = ds**2 / eta
+    return dt
 
 def add_timescale_fields(ds):
+    ds.add_field(
+        ("gas", "dt_diff"),
+        units=None,
+        function=_dt_diff,
+        sampling_type="cell",
+    )
+
     ds.add_field(
         ("gas", "adiabatic_heating_timescale"), 
         units=None,
@@ -1448,14 +2114,14 @@ def grabFileSeries(
     width=5,
     scratchPath="/mnt/gs21/scratch/freem386/",
     outputnum="out2",
-    extension="athdf"
+    extension="phdf"
 ):
     """
-    Generate a list of file paths for a series of Athena++ .athdf files.
+    Generate a list of file paths for a series of Athena++ .phdf files.
 
     If `fn` is None, attempts to discover the largest index in the directory by
     matching any file that follows the pattern:
-        {basename}.{outputnum}.{index}.athdf
+        {basename}.{outputnum}.{index}.phdf
 
     Parameters
     ----------
@@ -1488,7 +2154,7 @@ def grabFileSeries(
     # If fn is None, find the max index by scanning the directory for matching files
     if fn is None:
         dir_path = os.path.join(scratchPath, scratchdirectory)
-        # Regex to match files like basename.out2.00000.athdf (with variable width)
+        # Regex to match files like basename.out2.00000.phdf (with variable width)
         pattern = rf"^{re.escape(basename)}\.{re.escape(outputnum)}\.(\d+)\.{extension}$"
 
         max_index = None
@@ -1504,7 +2170,7 @@ def grabFileSeries(
             # If no matching files are found, you can decide to raise an error,
             # return an empty list, or default to 0. Here we raise an error:
             raise FileNotFoundError(
-                f"No files matching the pattern '{basename}.{outputnum}.*.athdf' were found "
+                f"No files matching the pattern '{basename}.{outputnum}.*.phdf' were found "
                 f"in directory '{dir_path}'. Cannot determine largest index."
             )
 
